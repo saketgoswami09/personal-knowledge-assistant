@@ -5,7 +5,7 @@
  *
  * Chat UI — written for @ai-sdk/react v7 + ai v7.
  *
- * KEY v7 API CHANGES (vs. older SDK versions):
+ * KEY v7 API CHANGES (vs. older SDK versions / ai-sdk v6):
  *
  * 1. Import: `from '@ai-sdk/react'` — NOT 'ai/react' or 'ai'.
  *
@@ -52,8 +52,9 @@ export default function ChatPage() {
     transport: new DefaultChatTransport({ api: "/api/chat" }),
 
     // Seed the conversation with a welcome message.
+    // v7: property is `messages`, NOT `initialMessages` (that was the v6 name).
     // UIMessage shape: { id, role, parts: [{ type: 'text', text: string }] }
-    initialMessages: [
+    messages: [
       {
         id: "welcome",
         role: "assistant",
