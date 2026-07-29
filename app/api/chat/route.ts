@@ -29,6 +29,8 @@ import {
   toUIMessageStream,
   UIMessage,
 } from "ai";
+import { embed } from "@/lib/embedder";
+import { searchChunks } from "@/lib/supabase";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -37,11 +39,41 @@ export async function POST(req: Request): Promise<Response> {
   // v7: the hook sends UIMessage[] in the body
   const { messages }: { messages: UIMessage[] } = await req.json();
 
+  // ── RAG STEP 4: Retrieval ────────────────────────────────────────────────
+  // 1. Get the user's latest message text
+  const lastUserMessage = messages
+    .filter((m) => m.role === "user")
+    .pop();
+    
+  const queryText = typeof lastUserMessage?.content === "string" 
+    ? lastUserMessage.content 
+    : "Hello"; // Fallback if no user message
+
+  // 2. Embed the query
+  const queryEmbedding = await embed(queryText);
+
+  // 3. Search Supabase for the top 3 most similar chunks
+  const relevantChunks = await searchChunks(queryEmbedding, 3);
+  
+  // ── RAG STEP 5: Prompt Injection ─────────────────────────────────────────
+  // Format the retrieved chunks into a single context string
+  const contextText = relevantChunks
+    .map((chunk, i) => `[Source ${i + 1}]:\n${chunk.text}\n---`)
+    .join("\n");
+
+  const systemPrompt = `You are a helpful personal knowledge assistant.
+Answer concisely and clearly.
+
+Here is some context retrieved from the user's knowledge base that might be relevant:
+<context>
+${contextText}
+</context>
+
+If the answer is not in the context, you can still answer using your general knowledge, but prioritize the context if it applies.`;
+
   const result = streamText({
     model: groq("llama-3.3-70b-versatile"),
-    system:
-      "You are a helpful personal knowledge assistant. " +
-      "Answer concisely and clearly.",
+    system: systemPrompt,
     // convertToModelMessages translates UIMessage (with parts[]) → CoreMessage
     messages: await convertToModelMessages(messages),
     temperature: 0.7,
