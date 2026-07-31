@@ -1,0 +1,123 @@
+/**
+ * app/api/upload-pdf/route.ts
+ *
+ * HOW MULTIPART FILE UPLOADS WORK IN A NEXT.JS ROUTE HANDLER
+ * ────────────────────────────────────────────────────────────
+ * When a browser submits a <form encType="multipart/form-data"> (or a
+ * `fetch` call with a `FormData` body), the request body is NOT JSON.
+ * Instead, the browser encodes each field/file as a separate "part",
+ * separated by a random "boundary" string. The Content-Type header looks
+ * like:  `multipart/form-data; boundary=----WebKitFormBoundary7MA4...`
+ *
+ * In Next.js App Router route handlers you read this with:
+ *   const formData = await req.formData()     ← web standard FormData
+ *   const file     = formData.get("file")     ← returns a File (Blob subclass)
+ *
+ * WHY unpdf INSTEAD OF pdf-parse
+ * ────────────────────────────────
+ * pdf-parse v2 uses pdfjs-dist internally, which tries to spawn a web worker
+ * (pdf.worker.mjs). Turbopack bundles route handlers as Node.js modules, not
+ * browser bundles — so the worker file is never emitted and the require() fails
+ * at runtime with "Cannot find module pdf.worker.mjs".
+ *
+ * unpdf solves this by shipping pdfjs-dist in a worker-free "fake worker"
+ * configuration that runs entirely in the main thread. It's designed
+ * specifically for server/edge environments (Next.js, Nuxt, Cloudflare Workers).
+ * API: extractText(buffer) → Promise<{ totalPages, text }>
+ *
+ * PIPELINE (unchanged from /api/ingest):
+ *   PDF bytes → unpdf.extractText → raw text string
+ *   → chunkByFixedSizeWithOverlap (lib/chunker.ts)
+ *   → embedBatch (lib/embedder.ts)
+ *   → insertChunk × N (lib/supabase.ts)
+ */
+
+import { NextResponse } from "next/server";
+import { extractText, getDocumentProxy } from "unpdf";
+import { chunkByFixedSizeWithOverlap } from "@/lib/chunker";
+import { embedBatch } from "@/lib/embedder";
+import { insertChunk } from "@/lib/supabase";
+
+export const runtime = "nodejs";
+export const maxDuration = 120;
+
+export async function POST(req: Request) {
+  try {
+    // ── 1. Parse the multipart body ──────────────────────────────────────────
+    const formData = await req.formData();
+    const file = formData.get("file");
+
+    if (!file || !(file instanceof File)) {
+      return NextResponse.json(
+        { error: "No file provided. Send the PDF as field name 'file'." },
+        { status: 400 }
+      );
+    }
+
+    if (file.type !== "application/pdf") {
+      return NextResponse.json(
+        { error: `Expected a PDF, got: ${file.type}` },
+        { status: 400 }
+      );
+    }
+
+    console.log(`[PDF Upload] Received: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
+
+    // ── 2. Extract text from the PDF ─────────────────────────────────────────
+    // unpdf uses pdfjs-dist in fake-worker (synchronous) mode — no worker file
+    // needed, no bundler issues. We pass a Uint8Array (standard typed array).
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = new Uint8Array(arrayBuffer);
+
+    // getDocumentProxy loads the PDF into pdfjs-dist in-process.
+    // extractText walks each page and concatenates all text content.
+    const pdf = await getDocumentProxy(buffer);
+    const { totalPages, text: rawText } = await extractText(pdf, { mergePages: true });
+
+    const trimmed = (rawText as string).trim();
+
+    if (!trimmed) {
+      return NextResponse.json(
+        { error: "Could not extract text from this PDF. It may be image-only or password-protected." },
+        { status: 422 }
+      );
+    }
+
+    console.log(`[PDF Upload] Extracted ${trimmed.length} characters from ${totalPages} pages.`);
+
+    // ── 3. Chunk the text ────────────────────────────────────────────────────
+    // Reusing the exact same chunker as /api/ingest — no changes needed there.
+    const chunks = chunkByFixedSizeWithOverlap(trimmed, 500, 100);
+    console.log(`[PDF Upload] Created ${chunks.length} chunks.`);
+
+    // ── 4. Embed all chunks in one batch ─────────────────────────────────────
+    const chunkStrings = chunks.map((c) => c.text);
+    console.log(`[PDF Upload] Embedding ${chunks.length} chunks...`);
+    const embeddings = await embedBatch(chunkStrings);
+
+    // ── 5. Save each chunk + embedding to Supabase ───────────────────────────
+    console.log(`[PDF Upload] Saving to Supabase...`);
+    const insertedRecords = [];
+    for (let i = 0; i < chunks.length; i++) {
+      const record = await insertChunk(chunks[i].text, embeddings[i]);
+      insertedRecords.push(record);
+    }
+
+    console.log(`[PDF Upload] Done! Saved ${insertedRecords.length} chunks.`);
+
+    return NextResponse.json({
+      success: true,
+      filename: file.name,
+      pages: totalPages,
+      characters: trimmed.length,
+      chunksCreated: chunks.length,
+      message: `Successfully processed "${file.name}": ${chunks.length} chunks saved to your knowledge base.`,
+    });
+  } catch (error: any) {
+    console.error("[PDF Upload] Error:", error);
+    return NextResponse.json(
+      { error: error.message || "An error occurred during PDF processing." },
+      { status: 500 }
+    );
+  }
+}
