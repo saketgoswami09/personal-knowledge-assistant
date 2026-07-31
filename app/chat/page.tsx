@@ -5,55 +5,97 @@
  *
  * Chat UI — written for @ai-sdk/react v7 + ai v7.
  *
- * KEY v7 API CHANGES (vs. older SDK versions / ai-sdk v6):
+ * SOURCE CARDS
+ * Each assistant UIMessage now has a `data-sources` part injected by the
+ * server (before the text stream starts). We filter parts by type to get the
+ * sources, then render expandable cards below the message bubble.
  *
- * 1. Import: `from '@ai-sdk/react'` — NOT 'ai/react' or 'ai'.
- *
- * 2. Transport: useChat now takes `transport: new DefaultChatTransport({ api })`
- *    instead of just `api: '/api/chat'`.
- *
- * 3. Input state: The hook NO LONGER manages input internally.
- *    We manage `input` with a plain useState ourselves.
- *
- * 4. Sending: `sendMessage({ text: input })` — NOT `handleSubmit(e)`.
- *
- * 5. Status: The hook returns `status` with 4 values:
- *    'ready' | 'submitted' | 'streaming' | 'error'
- *    instead of a boolean `isLoading`.
- *
- * 6. Message content: `message.parts` (array) — NOT `message.content` (string).
- *    Text parts: { type: 'text', text: string }
- *    We filter for part.type === 'text' and render part.text.
- *
- * STREAMING FLOW (same fundamental mechanism, new API shape):
- *   sendMessage() → POST /api/chat with UIMessage[] body
- *   → Server streams SSE chunks back
- *   → useChat reads the ReadableStream, appends text deltas to the
- *     last assistant message's parts[0].text on every chunk
- *   → React re-renders that bubble token-by-token
+ * The `data-sources` part shape on the client:
+ *   { type: 'data-sources', data: SearchResult[] }
+ * where SearchResult = { id, text, similarity }
  */
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, UIMessage } from "ai";
+import { DefaultChatTransport } from "ai";
+import type { AppUIMessage, SourceDataTypes } from "@/app/api/chat/route";
+import type { SearchResult } from "@/lib/supabase";
 import { useEffect, useRef, useState } from "react";
-import { Send, Sparkles, User, AlertCircle } from "lucide-react";
+import { Send, Sparkles, User, AlertCircle, ChevronDown, Database } from "lucide-react";
+
+// ── Source Cards ──────────────────────────────────────────────────────────────
+
+function SourceCard({ source, index }: { source: SearchResult; index: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const score = Math.round(source.similarity * 100);
+
+  return (
+    <div className="rounded-lg border border-blue-100 bg-blue-50/60 text-xs overflow-hidden">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left hover:bg-blue-100/60 transition-colors"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <Database className="w-3 h-3 text-blue-400 shrink-0" />
+          <span className="text-blue-700 font-medium truncate">
+            Source {index + 1}
+          </span>
+          <span className="shrink-0 px-1.5 py-0.5 bg-blue-200/70 text-blue-700 rounded-full font-mono">
+            {score}% match
+          </span>
+        </div>
+        <ChevronDown
+          className={`w-3.5 h-3.5 text-blue-400 shrink-0 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+        />
+      </button>
+      {expanded && (
+        <div className="px-3 pb-3 pt-1 text-gray-600 leading-relaxed border-t border-blue-100 whitespace-pre-wrap">
+          {source.text}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SourcesPanel({ sources }: { sources: SearchResult[] }) {
+  const [open, setOpen] = useState(false);
+
+  if (sources.length === 0) return null;
+
+  return (
+    <div className="mt-2">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1.5 text-xs text-blue-500 hover:text-blue-700 font-medium transition-colors"
+      >
+        <Database className="w-3.5 h-3.5" />
+        Sources ({sources.length})
+        <ChevronDown
+          className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && (
+        <div className="mt-2 space-y-1.5">
+          {sources.map((src, i) => (
+            <SourceCard key={src.id} source={src} index={i} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function ChatPage() {
-  // v7: input is managed by us, not the hook
   const [input, setInput] = useState("");
 
   const {
-    messages,    // UIMessage[] — each message has a `parts` array
-    sendMessage, // (content, options?) => void — triggers the POST + stream
-    status,      // 'ready' | 'submitted' | 'streaming' | 'error'
-    error,       // Error | undefined
-  } = useChat({
-    // v7: transport object wraps the API config
+    messages,
+    sendMessage,
+    status,
+    error,
+  } = useChat<AppUIMessage>({
     transport: new DefaultChatTransport({ api: "/api/chat" }),
-
-    // Seed the conversation with a welcome message.
-    // v7: property is `messages`, NOT `initialMessages` (that was the v6 name).
-    // UIMessage shape: { id, role, parts: [{ type: 'text', text: string }] }
     messages: [
       {
         id: "welcome",
@@ -64,11 +106,10 @@ export default function ChatPage() {
             text: "Hello! I'm your personal knowledge assistant. Ask me anything.",
           },
         ],
-      } satisfies UIMessage,
+      } satisfies AppUIMessage,
     ],
   });
 
-  // Auto-scroll to the latest message
   const messagesEndRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -79,8 +120,6 @@ export default function ChatPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isStreaming) return;
-
-    // v7: sendMessage takes the text content directly
     sendMessage({ text: input.trim() });
     setInput("");
   };
@@ -113,18 +152,24 @@ export default function ChatPage() {
         <div className="max-w-3xl mx-auto space-y-6">
 
           {messages.map((m) => {
-            // v7: extract the text from the parts array
+            // Extract text content from parts
             const textContent = m.parts
               .filter((p) => p.type === "text")
               .map((p) => p.text)
               .join("");
 
+            // Extract sources from the data-sources part (assistant only)
+            const sources: SearchResult[] =
+              m.role === "assistant"
+                ? (m.parts
+                    .filter((p) => p.type === "data-sources")
+                    .flatMap((p) => (p as { type: "data-sources"; data: SearchResult[] }).data))
+                : [];
+
             return (
               <div
                 key={m.id}
-                className={`flex gap-4 ${
-                  m.role === "user" ? "flex-row-reverse" : "flex-row"
-                }`}
+                className={`flex gap-4 ${m.role === "user" ? "flex-row-reverse" : "flex-row"}`}
               >
                 {/* Avatar */}
                 <div className="flex-shrink-0 mt-1">
@@ -139,31 +184,35 @@ export default function ChatPage() {
                   )}
                 </div>
 
-                {/* Message bubble.
-                    During streaming, `textContent` grows token-by-token as
-                    useChat appends each delta to parts[0].text.
-                    React re-renders this div on every chunk — zero extra code. */}
-                <div
-                  className={`relative px-5 py-3.5 text-[15px] leading-relaxed shadow-sm max-w-[80%] sm:max-w-[70%] ${
-                    m.role === "user"
-                      ? "bg-blue-600 text-white rounded-2xl rounded-tr-sm"
-                      : "bg-white text-gray-800 border border-gray-200/60 rounded-2xl rounded-tl-sm"
-                  }`}
-                >
-                  {textContent}
+                {/* Bubble + Sources */}
+                <div className="flex flex-col max-w-[80%] sm:max-w-[70%] gap-2">
+                  <div
+                    className={`relative px-5 py-3.5 text-[15px] leading-relaxed shadow-sm ${
+                      m.role === "user"
+                        ? "bg-blue-600 text-white rounded-2xl rounded-tr-sm"
+                        : "bg-white text-gray-800 border border-gray-200/60 rounded-2xl rounded-tl-sm"
+                    }`}
+                  >
+                    {textContent}
 
-                  {/* Blinking cursor on the actively-streaming message */}
-                  {isStreaming &&
-                    m.id === messages[messages.length - 1]?.id &&
-                    m.role === "assistant" && (
-                      <span className="inline-block w-0.5 h-4 bg-gray-400 ml-0.5 animate-pulse align-middle" />
-                    )}
+                    {/* Blinking cursor on the actively-streaming message */}
+                    {isStreaming &&
+                      m.id === messages[messages.length - 1]?.id &&
+                      m.role === "assistant" && (
+                        <span className="inline-block w-0.5 h-4 bg-gray-400 ml-0.5 animate-pulse align-middle" />
+                      )}
+                  </div>
+
+                  {/* Source cards — only shown when streaming is done */}
+                  {m.role === "assistant" && !isStreaming && sources.length > 0 && (
+                    <SourcesPanel sources={sources} />
+                  )}
                 </div>
               </div>
             );
           })}
 
-          {/* Typing indicator — shown while submitted but first chunk hasn't arrived */}
+          {/* Typing indicator */}
           {status === "submitted" && (
             <div className="flex gap-4 flex-row">
               <div className="flex-shrink-0 mt-1">
@@ -183,15 +232,10 @@ export default function ChatPage() {
           {error && (
             <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <span>
-                Something went wrong. Check your{" "}
-                <code className="font-mono text-xs">OPENAI_API_KEY</code> in{" "}
-                <code className="font-mono text-xs">.env.local</code>.
-              </span>
+              <span>Something went wrong. Check your API keys in <code className="font-mono text-xs">.env.local</code>.</span>
             </div>
           )}
 
-          {/* Scroll anchor */}
           <div ref={messagesEndRef} className="h-4" />
         </div>
       </main>
