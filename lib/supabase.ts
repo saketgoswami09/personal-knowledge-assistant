@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { DatabaseError, RetrievalError } from "./errors";
 
 // Make sure to add these to your .env.local:
 // SUPABASE_URL=https://your-project-ref.supabase.co
@@ -36,7 +37,10 @@ export async function insertChunk(text: string, embedding: number[]) {
     .single();
 
   if (error) {
-    throw new Error(`Error inserting chunk: ${error.message}`);
+    throw new DatabaseError(
+      `insertChunk failed: ${error.message}`,
+      "Failed to save document chunk. Please try again."
+    );
   }
 
   return data as DbChunk;
@@ -87,7 +91,9 @@ export async function searchChunks(
   });
 
   if (error) {
-    throw new Error(`Error searching chunks: ${error.message}`);
+    throw new RetrievalError(
+      `searchChunks RPC failed: ${error.message}`
+    );
   }
 
   return data as SearchResult[];
@@ -119,7 +125,7 @@ export async function createConversation(title: string): Promise<DbConversation>
     .select()
     .single();
 
-  if (error) throw new Error(`Error creating conversation: ${error.message}`);
+  if (error) throw new DatabaseError(`createConversation failed: ${error.message}`);
   return data as DbConversation;
 }
 
@@ -129,7 +135,7 @@ export async function getConversations(): Promise<DbConversation[]> {
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (error) throw new Error(`Error fetching conversations: ${error.message}`);
+  if (error) throw new DatabaseError(`getConversations failed: ${error.message}`);
   return data as DbConversation[];
 }
 
@@ -140,7 +146,7 @@ export async function getMessages(conversationId: string): Promise<DbMessage[]> 
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true });
 
-  if (error) throw new Error(`Error fetching messages: ${error.message}`);
+  if (error) throw new DatabaseError(`getMessages failed: ${error.message}`);
   return data as DbMessage[];
 }
 
@@ -161,5 +167,5 @@ export async function saveMessage(message: {
       sources: message.sources || null,
     }]);
 
-  if (error) throw new Error(`Error saving message: ${error.message}`);
+  if (error) throw new DatabaseError(`saveMessage failed: ${error.message}`);
 }

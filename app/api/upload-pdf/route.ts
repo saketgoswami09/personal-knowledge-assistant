@@ -37,6 +37,8 @@ import { extractText, getDocumentProxy } from "unpdf";
 import { chunkByFixedSizeWithOverlap } from "@/lib/chunker";
 import { embedBatch } from "@/lib/embedder";
 import { insertChunk } from "@/lib/supabase";
+import { ValidationError } from "@/lib/errors";
+import { handleApiError } from "@/lib/handle-api-error";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -48,16 +50,16 @@ export async function POST(req: Request) {
     const file = formData.get("file");
 
     if (!file || !(file instanceof File)) {
-      return NextResponse.json(
-        { error: "No file provided. Send the PDF as field name 'file'." },
-        { status: 400 }
+      throw new ValidationError(
+        "upload-pdf: no file in multipart body",
+        "No file provided. Send the PDF as form field 'file'."
       );
     }
 
     if (file.type !== "application/pdf") {
-      return NextResponse.json(
-        { error: `Expected a PDF, got: ${file.type}` },
-        { status: 400 }
+      throw new ValidationError(
+        `upload-pdf: wrong MIME type '${file.type}'`,
+        `Expected a PDF file, received: ${file.type}`
       );
     }
 
@@ -77,9 +79,9 @@ export async function POST(req: Request) {
     const trimmed = (rawText as string).trim();
 
     if (!trimmed) {
-      return NextResponse.json(
-        { error: "Could not extract text from this PDF. It may be image-only or password-protected." },
-        { status: 422 }
+      throw new ValidationError(
+        `upload-pdf: extracted empty text from '${file.name}'`,
+        "Could not extract any text from this PDF. It may be image-only or password-protected."
       );
     }
 
@@ -113,11 +115,8 @@ export async function POST(req: Request) {
       chunksCreated: chunks.length,
       message: `Successfully processed "${file.name}": ${chunks.length} chunks saved to your knowledge base.`,
     });
-  } catch (error: any) {
-    console.error("[PDF Upload] Error:", error);
-    return NextResponse.json(
-      { error: error.message || "An error occurred during PDF processing." },
-      { status: 500 }
-    );
+  } catch (err) {
+    console.error("[PDF Upload] Error:", err);
+    return handleApiError(err, "[POST /api/upload-pdf]");
   }
 }

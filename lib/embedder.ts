@@ -21,6 +21,7 @@
  */
 
 import { HfInference } from "@huggingface/inference";
+import { EmbeddingError, ValidationError } from "./errors";
 
 // ---------------------------------------------------------------------------
 // Client (singleton — reuse across requests)
@@ -35,12 +36,18 @@ export const EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2";
 // 1. Embed a single string → number[]
 // ---------------------------------------------------------------------------
 export async function embed(text: string): Promise<number[]> {
-  const result = await hf.featureExtraction({
-    model: EMBEDDING_MODEL,
-    inputs: text,
-  });
-  // HF returns number[] for a single string input
-  return result as number[];
+  try {
+    const result = await hf.featureExtraction({
+      model: EMBEDDING_MODEL,
+      inputs: text,
+    });
+    // HF returns number[] for a single string input
+    return result as number[];
+  } catch (err: any) {
+    throw new EmbeddingError(
+      `embed() failed — HuggingFace error: ${err?.message ?? err}`
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -48,12 +55,18 @@ export async function embed(text: string): Promise<number[]> {
 //    One API round-trip instead of N — always prefer this for batches.
 // ---------------------------------------------------------------------------
 export async function embedBatch(texts: string[]): Promise<number[][]> {
-  const result = await hf.featureExtraction({
-    model: EMBEDDING_MODEL,
-    inputs: texts,
-  });
-  // HF returns number[][] for an array input
-  return result as number[][];
+  try {
+    const result = await hf.featureExtraction({
+      model: EMBEDDING_MODEL,
+      inputs: texts,
+    });
+    // HF returns number[][] for an array input
+    return result as number[][];
+  } catch (err: any) {
+    throw new EmbeddingError(
+      `embedBatch() failed — HuggingFace error: ${err?.message ?? err}`
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -68,7 +81,10 @@ export async function embedBatch(texts: string[]): Promise<number[][]> {
 // ---------------------------------------------------------------------------
 export function dotProduct(a: number[], b: number[]): number {
   if (a.length !== b.length) {
-    throw new Error(`Vector length mismatch: ${a.length} vs ${b.length}`);
+    throw new ValidationError(
+      `dotProduct: vector length mismatch — ${a.length} vs ${b.length}`,
+      "Internal vector dimension mismatch."
+    );
   }
   return a.reduce((sum, ai, i) => sum + ai * b[i], 0);
 }

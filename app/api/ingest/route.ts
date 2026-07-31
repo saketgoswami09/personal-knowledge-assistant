@@ -18,6 +18,8 @@ import { NextResponse } from "next/server";
 import { chunkByFixedSizeWithOverlap } from "@/lib/chunker";
 import { embedBatch } from "@/lib/embedder";
 import { insertChunk } from "@/lib/supabase";
+import { ValidationError } from "@/lib/errors";
+import { handleApiError } from "@/lib/handle-api-error";
 
 export async function POST(req: Request) {
   try {
@@ -25,9 +27,9 @@ export async function POST(req: Request) {
     const text = body.text;
 
     if (!text || typeof text !== "string") {
-      return NextResponse.json(
-        { error: "Please provide 'text' in the request body." },
-        { status: 400 }
+      throw new ValidationError(
+        "POST /api/ingest: missing or non-string 'text' field",
+        "Please provide a non-empty 'text' string in the request body."
       );
     }
 
@@ -61,11 +63,8 @@ export async function POST(req: Request) {
       message: `Successfully embedded and saved ${chunks.length} chunks.`,
       chunks: insertedRecords.map((r) => ({ id: r.id, textPreview: r.text.slice(0, 50) + "..." })),
     });
-  } catch (error: any) {
-    console.error("[Ingest] Error:", error);
-    return NextResponse.json(
-      { error: error.message || "An error occurred during ingestion." },
-      { status: 500 }
-    );
+  } catch (err) {
+    console.error("[Ingest] Error:", err);
+    return handleApiError(err, "[POST /api/ingest]");
   }
 }
