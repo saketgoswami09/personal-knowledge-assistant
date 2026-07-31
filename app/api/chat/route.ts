@@ -45,6 +45,13 @@ export type SourceDataTypes = {
 
 export type AppUIMessage = UIMessage<unknown, SourceDataTypes>;
 
+// ── Relevance gate ───────────────────────────────────────────────────────────
+// Only inject retrieved context when the top chunk's cosine similarity is at
+// or above this value. Tune it up to reduce noise, down to cast a wider net.
+// Cosine similarity from pgvector <=> is in [0, 1]; 0.3 is a conservative
+// default that filters clearly unrelated results while keeping weak matches.
+const RELEVANCE_THRESHOLD = 0.3;
+
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
@@ -64,20 +71,31 @@ export async function POST(req: Request): Promise<Response> {
   const queryEmbedding = await embed(queryText);
   const relevantChunks = await searchChunks(queryEmbedding, 3);
 
-  // ── RAG STEP 5: Prompt Injection ─────────────────────────────────────────
-  const contextText = relevantChunks
-    .map((chunk, i) => `[Source ${i + 1}]:\n${chunk.text}\n---`)
-    .join("\n");
+  // ── RAG STEP 5: Relevance gate + Prompt Injection ───────────────────────
+  // Only trust retrieved context when the best match actually looks relevant.
+  // Below the threshold we fall back to a plain general-knowledge prompt so
+  // the LLM doesn't hallucinate grounding from unrelated chunks.
+  const topScore = relevantChunks[0]?.similarity ?? 0;
+  const hasRelevantContext = topScore >= RELEVANCE_THRESHOLD;
 
-  const systemPrompt = `You are a helpful personal knowledge assistant.
+  // Filter to only the chunks that cleared the bar (keeps sources honest).
+  const sourcesToUse = hasRelevantContext
+    ? relevantChunks.filter((c) => c.similarity >= RELEVANCE_THRESHOLD)
+    : [];
+
+  const systemPrompt = hasRelevantContext
+    ? `You are a helpful personal knowledge assistant.
 Answer concisely and clearly.
 
-Here is some context retrieved from the user's knowledge base that might be relevant:
+Here is some context retrieved from the user's knowledge base that is relevant to their question:
 <context>
-${contextText}
+${sourcesToUse.map((chunk, i) => `[Source ${i + 1}]:\n${chunk.text}\n---`).join("\n")}
 </context>
 
-If the answer is not in the context, you can still answer using your general knowledge, but prioritize the context if it applies.`;
+Base your answer on this context. If the context does not fully cover the question, supplement with your general knowledge and say so.`
+    : `You are a helpful personal knowledge assistant.
+Answer concisely and clearly using your general knowledge.
+No specific context has been retrieved from the knowledge base for this question.`;
 
   const result = streamText({
     model: groq("llama-3.3-70b-versatile"),
@@ -86,21 +104,18 @@ If the answer is not in the context, you can still answer using your general kno
     temperature: 0.7,
   });
 
-  // ── Multiplex sources + text into a single stream ─────────────────────────
-  // createUIMessageStream gives us a writer we control.
-  // We write the sources FIRST as a typed data chunk, then merge the LLM text.
-  // The client's useChat hook reads both from the same byte stream and puts
-  // them both into message.parts automatically.
+  // ── Multiplex (optional) sources + text into a single stream ──────────────
+  // We only write the data-sources chunk when context was actually used.
+  // If the relevance gate fails, no sources panel will appear on the client.
   const stream = createUIMessageStream<AppUIMessage>({
     execute: async ({ writer }) => {
-      // Step 1: Write source metadata chunk before any text arrives.
-      // The `data-sources` type maps to SourceDataTypes["sources"].
-      writer.write({
-        type: "data-sources",
-        data: relevantChunks,
-      });
+      if (hasRelevantContext) {
+        writer.write({
+          type: "data-sources",
+          data: sourcesToUse,
+        });
+      }
 
-      // Step 2: Pipe LLM text tokens into the same stream.
       writer.merge(result.toUIMessageStream());
     },
   });
