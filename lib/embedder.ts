@@ -83,7 +83,7 @@ export function dotProduct(a: number[], b: number[]): number {
   if (a.length !== b.length) {
     throw new ValidationError(
       `dotProduct: vector length mismatch — ${a.length} vs ${b.length}`,
-      "Internal vector dimension mismatch."
+       "Internal vector dimension mismatch."
     );
   }
   return a.reduce((sum, ai, i) => sum + ai * b[i], 0);
@@ -96,7 +96,7 @@ export function dotProduct(a: number[], b: number[]): number {
 //    [3, 4] → √(9 + 16) = √25 = 5
 // ---------------------------------------------------------------------------
 export function magnitude(v: number[]): number {
-  return Math.sqrt(v.reduce((sum, vi) => sum + vi * vi, 0));
+     return Math.sqrt(v.reduce((sum, vi) => sum + vi * vi, 0));
 }
 
 // ---------------------------------------------------------------------------
@@ -113,8 +113,8 @@ export function magnitude(v: number[]): number {
 //    correctness with any model.
 // ---------------------------------------------------------------------------
 export function cosineSimilarity(a: number[], b: number[]): number {
-  const denom = magnitude(a) * magnitude(b);
-  if (denom === 0) return 0; // guard: don't divide by zero
+   const denom = magnitude(a) * magnitude(b);
+    if (denom === 0) return 0; 
   return dotProduct(a, b) / denom;
 }
 

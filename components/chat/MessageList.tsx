@@ -30,7 +30,7 @@ export function MessageList({ messages, status, error }: Props) {
   return (
     <main className="flex-1 overflow-y-auto px-4 py-8 sm:px-6 lg:px-8 bg-slate-50/60">
       <div className="max-w-3xl mx-auto space-y-6">
-        {messages.map((m) => {
+        {messages.filter((m) => m.id !== "welcome").map((m) => {
           const textContent = m.parts
             .filter((p) => p.type === "text")
             .map((p) => p.text)

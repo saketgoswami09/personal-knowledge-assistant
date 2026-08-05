@@ -3,7 +3,7 @@
 /**
  * app/chat/page.tsx
  *
- * Chat UI — refactored to use RTK Query for all REST data-fetching.
+ * Chat UI — ChatGPT-style home screen → chat layout transition.
  *
  * Data-flow:
  *   • Sidebar conversation list  → useGetConversationsQuery   (RTK Query)
@@ -22,27 +22,27 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import type { AppUIMessage } from "@/app/api/chat/route";
-import Link from "next/link";
 import { useEffect, useRef, useState, useMemo } from "react";
-import { Sparkles, FileText, Menu } from "lucide-react";
 
 import { useCreateConversationMutation, useGetMessagesQuery } from "@/lib/store/api";
 import { ConversationSidebar } from "@/components/chat/ConversationSidebar";
-import { MessageList } from "@/components/chat/MessageList";
-import { ChatInput } from "@/components/chat/ChatInput";
+import { HomeScreen } from "@/components/chat/HomeScreen";
+import { ChatLayout } from "@/components/chat/ChatLayout";
+import { TopNav } from "@/components/chat/TopNav";
 
-// ── Welcome message shown in every fresh chat ─────────────────────────────────
+// ── Welcome sentinel (never shown in UI, just marks "new chat" state) ─────────
 
 const WELCOME_MESSAGE: AppUIMessage = {
   id: "welcome",
   role: "assistant",
-  parts: [
-    {
-      type: "text",
-      text: "Hello! I'm your personal knowledge assistant. Ask me anything.",
-    },
-  ],
+  parts: [{ type: "text", text: "" }],
 };
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/** True when the user hasn't sent any message yet (only the sentinel exists). */
+const isHomeState = (messages: AppUIMessage[]) =>
+  messages.length === 1 && messages[0].id === "welcome";
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
@@ -110,7 +110,7 @@ export default function ChatPage() {
     setMessages(uiMsgs);
   }, [activeId, persistedMessages, setMessages]);
 
-  // Reset to welcome message when switching to a new (unsaved) chat.
+  // Reset to welcome sentinel when switching to a new (unsaved) chat.
   useEffect(() => {
     if (!activeId) {
       setMessages([WELCOME_MESSAGE]);
@@ -155,9 +155,12 @@ export default function ChatPage() {
 
   const handleNewChat = () => {
     setActiveId(null);
+    setInputValue("");
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
+
+  const showHome = isHomeState(messages);
 
   return (
     <div className="flex h-screen bg-white font-sans overflow-hidden">
@@ -170,61 +173,33 @@ export default function ChatPage() {
         onClose={() => setSidebarOpen(false)}
       />
 
-      {/* ── Main Chat Area ── */}
+      {/* ── Main Area ── */}
       <div className="flex-1 flex flex-col min-w-0 h-screen">
-        {/* ── Header ── */}
-        <header className="sticky top-0 z-10 flex items-center justify-between px-4 sm:px-6 py-4 bg-white/80 backdrop-blur-md border-b border-gray-200/70 shadow-sm shrink-0">
-          <div className="flex items-center gap-3">
-            {/* Mobile sidebar toggle */}
-            <button
-              onClick={() => setSidebarOpen(true)}
-              aria-label="Open sidebar"
-              className="md:hidden p-2 -ml-1 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-            {/* Avatar — matches sidebar branding gradient */}
-            <div className="hidden sm:flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-blue-500 text-white shadow-md shadow-violet-500/20">
-              <Sparkles className="w-4.5 h-4.5" />
-            </div>
-            <div>
-              <h1 className="text-base font-bold text-gray-900 tracking-tight leading-none">
-                Knowledge Assistant
-              </h1>
-              <p className="text-[11px] font-medium mt-0.5 hidden sm:block leading-none">
-                <span className={[
-                  status === "submitted" ? "text-violet-500" : "",
-                  status === "streaming" ? "text-blue-500" : "",
-                  status === "ready" ? "text-gray-400" : "",
-                  status === "error" ? "text-red-500" : "",
-                ].join(" ")}>
-                  {status === "submitted" && "Thinking…"}
-                  {status === "streaming" && "Streaming…"}
-                  {status === "ready" && "Ready"}
-                  {status === "error" && "Error"}
-                </span>
-              </p>
-            </div>
-          </div>
-          <Link
-            href="/upload"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-violet-600 hover:bg-violet-50 transition-all shrink-0"
-          >
-            <FileText className="w-4 h-4" />
-            <span className="hidden sm:inline">Upload PDF</span>
-          </Link>
-        </header>
-
-        {/* ── Message List ── */}
-        <MessageList messages={messages} status={status} error={error} />
-
-        {/* ── Input ── */}
-        <ChatInput
-          value={inputValue}
-          onChange={setInputValue}
-          onSubmit={handleSubmit}
-          disabled={isStreaming}
+        {/* ── Top Nav ── */}
+        <TopNav
+          onMenuOpen={() => setSidebarOpen(true)}
+          status={status}
+          chatMode={!showHome}
         />
+
+        {/* ── Content: Home or Chat ── */}
+        {showHome ? (
+          <HomeScreen
+            value={inputValue}
+            onChange={setInputValue}
+            onSubmit={handleSubmit}
+            disabled={isStreaming}
+          />
+        ) : (
+          <ChatLayout
+            messages={messages}
+            status={status}
+            error={error}
+            value={inputValue}
+            onChange={setInputValue}
+            onSubmit={handleSubmit}
+          />
+        )}
       </div>
     </div>
   );
