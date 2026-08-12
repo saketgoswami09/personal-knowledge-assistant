@@ -71,17 +71,15 @@ export function ConversationSidebar({
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
           {!collapsed && (
             <div className="flex items-center gap-2.5">
-              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gray-900">
-                <MessageSquare className="w-3.5 h-3.5 text-white" />
-              </div>
+
               <span className="text-sm font-semibold text-gray-900 tracking-tight">
-                Knowledge Assistant
+                <h1>Consious</h1>
               </span>
             </div>
           )}
           {collapsed && (
-            <div className="mx-auto flex items-center justify-center w-9 h-9 rounded-lg bg-gray-900">
-              <MessageSquare className="w-4 h-4 text-white" />
+            <div className="mx-auto flex items-center justify-center w-9 h-9 rounded-lg ">
+
             </div>
           )}
 
@@ -108,17 +106,7 @@ export function ConversationSidebar({
 
         {/* ── New Chat ── */}
         <div className={`px-3 pt-4 pb-2 ${collapsed ? "px-2" : ""}`}>
-          <button
-            onClick={handleNew}
-            className={`flex items-center gap-2.5 w-full rounded-xl font-medium transition-all duration-200 ${collapsed
-              ? "justify-center p-3 text-gray-600 hover:bg-gray-100"
-              : "px-3 py-2.5 text-gray-700 hover:bg-gray-100 border border-gray-200"
-              }`}
-            title={collapsed ? "New Chat" : undefined}
-          >
-            <Plus className="w-4 h-4 shrink-0" />
-            {!collapsed && <span className="text-sm">New Chat</span>}
-          </button>
+
         </div>
 
         {/* ── Section Nav (LineSidebar) ── */}

@@ -36,6 +36,7 @@ import {
 import { embed } from "@/lib/embedder";
 import { searchChunks, SearchResult, saveMessage } from "@/lib/supabase";
 import { handleApiError } from "@/lib/handle-api-error";
+import { checkRateLimit, LIMITS } from "@/lib/rate-limit";
 
 // ── Augment the UIMessage type to include our custom `data-sources` part ──────
 // This is the v7 pattern for typed custom data: declare a DATA_TYPES map,
@@ -58,6 +59,9 @@ export const maxDuration = 60;
 
 export async function POST(req: Request): Promise<Response> {
   try {
+    // ── Rate limit — checked first, before any I/O ──────────────────────────
+    checkRateLimit(req, LIMITS.chat);
+
     const { searchParams } = new URL(req.url);
     const conversationId = searchParams.get("conversationId");
 

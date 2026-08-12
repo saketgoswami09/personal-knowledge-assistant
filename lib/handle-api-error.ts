@@ -43,7 +43,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { AppError } from "./errors";
+import { AppError, RateLimitError } from "./errors";
 
 /** The consistent JSON shape returned for every API error. */
 export interface ApiErrorResponse {
@@ -66,9 +66,16 @@ export function handleApiError(err: unknown, context = "[API]"): NextResponse<Ap
     // Log the full internal detail (includes original cause message, class name)
     console.error(`${context} ${err.name} [${err.code}]:`, err.message);
 
+    // For rate-limit errors, also emit the standard Retry-After header so
+    // HTTP clients (browsers, fetch, etc.) can automatically back off.
+    const headers: Record<string, string> =
+      err instanceof RateLimitError
+        ? { "Retry-After": String(err.retryAfterSeconds) }
+        : {};
+
     return NextResponse.json(
       { error: { code: err.code, message: err.clientMessage } },
-      { status: err.statusCode }
+      { status: err.statusCode, headers }
     );
   }
 

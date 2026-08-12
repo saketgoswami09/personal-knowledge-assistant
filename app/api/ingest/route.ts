@@ -20,9 +20,13 @@ import { embedBatch } from "@/lib/embedder";
 import { insertChunk } from "@/lib/supabase";
 import { ValidationError } from "@/lib/errors";
 import { handleApiError } from "@/lib/handle-api-error";
+import { checkRateLimit, LIMITS } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
   try {
+    // ── Rate limit — checked first, before any I/O ──────────────────────────
+    checkRateLimit(req, LIMITS.ingest);
+
     const body = await req.json();
     const text = body.text;
 

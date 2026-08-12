@@ -39,12 +39,16 @@ import { embedBatch } from "@/lib/embedder";
 import { insertChunk } from "@/lib/supabase";
 import { ValidationError } from "@/lib/errors";
 import { handleApiError } from "@/lib/handle-api-error";
+import { checkRateLimit, LIMITS } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
 export async function POST(req: Request) {
   try {
+    // ── Rate limit — checked first, before expensive PDF I/O ────────────────
+    checkRateLimit(req, LIMITS.uploadPdf);
+
     // ── 1. Parse the multipart body ──────────────────────────────────────────
     const formData = await req.formData();
     const file = formData.get("file");

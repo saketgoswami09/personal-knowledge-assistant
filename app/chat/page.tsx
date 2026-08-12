@@ -64,7 +64,7 @@ export default function ChatPage() {
 
   // Fetch persisted messages for the active conversation.
   // `skip: true` when no conversation is selected (new chat).
-  const { data: persistedMessages } = useGetMessagesQuery(activeId!, {
+  const { data: persistedMessages, isFetching } = useGetMessagesQuery(activeId!, {
     skip: !activeId,
   });
 
@@ -95,7 +95,8 @@ export default function ChatPage() {
   // ── Sync persisted messages into the AI SDK when activeId changes ──────────
 
   useEffect(() => {
-    if (!activeId || !persistedMessages) return;
+    // Prevent syncing stale cached messages from a previously active conversation while fetching the new one.
+    if (!activeId || !persistedMessages || isFetching) return;
 
     const uiMsgs: AppUIMessage[] = persistedMessages.map((m) => {
       const parts: AppUIMessage["parts"] = [];
@@ -108,7 +109,7 @@ export default function ChatPage() {
     });
 
     setMessages(uiMsgs);
-  }, [activeId, persistedMessages, setMessages]);
+  }, [activeId, persistedMessages, isFetching, setMessages]);
 
   // Reset to welcome sentinel when switching to a new (unsaved) chat.
   useEffect(() => {

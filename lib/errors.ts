@@ -23,6 +23,7 @@
  *   AppError (abstract base — never thrown directly)
  *    ├── ValidationError   400  Client sent bad data (missing field, wrong type)
  *    ├── NotFoundError     404  Requested resource does not exist
+ *    ├── RateLimitError    429  Request rate limit exceeded
  *    ├── EmbeddingError    502  Upstream HuggingFace API call failed
  *    ├── RetrievalError    502  pgvector / Supabase RPC search failed
  *    └── DatabaseError     503  Supabase insert / query failed
@@ -163,5 +164,26 @@ export class DatabaseError extends AppError {
     clientMessage = "A database error occurred. Please try again later."
   ) {
     super(internalMessage, clientMessage, 503, "DATABASE_ERROR");
+  }
+}
+
+/**
+ * The caller has exceeded the configured request rate limit.
+ * 429 Too Many Requests — includes the window reset time so the client
+ * can back off correctly.
+ *
+ * Throw from: lib/rate-limit.ts → checkRateLimit()
+ */
+export class RateLimitError extends AppError {
+  /** Seconds the caller should wait before retrying. */
+  readonly retryAfterSeconds: number;
+
+  constructor(
+    internalMessage: string,
+    retryAfterSeconds: number,
+    clientMessage = "Too many requests. Please slow down and try again shortly."
+  ) {
+    super(internalMessage, clientMessage, 429, "RATE_LIMIT_EXCEEDED");
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
