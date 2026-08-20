@@ -36,7 +36,8 @@ import {
 import { embed } from "@/lib/embedder";
 import { searchChunks, SearchResult, saveMessage } from "@/lib/supabase";
 import { handleApiError } from "@/lib/handle-api-error";
-import { checkRateLimit, LIMITS } from "@/lib/rate-limit";
+import { checkRateLimit, LIMITS, MAX_CHAT_MESSAGE_CHARS } from "@/lib/rate-limit";
+import { ValidationError } from "@/lib/errors";
 
 // ── Augment the UIMessage type to include our custom `data-sources` part ──────
 // This is the v7 pattern for typed custom data: declare a DATA_TYPES map,
@@ -76,6 +77,16 @@ export async function POST(req: Request): Promise<Response> {
     const queryText = lastUserMessage?.parts?.reduce((text, part) => {
       return text + (part.type === "text" ? part.text : "");
     }, "") || "Hello";
+
+    // ── RAG payload guard: message length ───────────────────────────────────
+    // Reject before embed/LLM if the message is unreasonably long.
+    // Long inputs cause proportionally expensive embedding + LLM token costs.
+    if (queryText.length > MAX_CHAT_MESSAGE_CHARS) {
+      throw new ValidationError(
+        `[ChatRoute] User message too long: ${queryText.length} chars (max ${MAX_CHAT_MESSAGE_CHARS})`,
+        `Message too long. Please keep your message under ${MAX_CHAT_MESSAGE_CHARS} characters.`
+      );
+    }
 
     // embed() throws EmbeddingError → handleApiError maps it to 502
     const queryEmbedding = await embed(queryText);

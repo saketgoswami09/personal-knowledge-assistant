@@ -17,7 +17,144 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+/* =========================
+   HERO 3D CARDS
+========================= */
 
+/* =========================
+   HERO 3D
+========================= */
+.hero-3d {
+  width: 100%;
+  height: 520px;
+  perspective: 2000px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-3d-wrap {
+  width: 80rem;
+  height: 80rem;
+  position: absolute;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  transform-style: preserve-3d;
+
+  transform:
+    translateY(10%)
+    translateZ(-20rem)
+    rotateX(-77deg);
+}
+
+.hero-3d-group {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  transform-style: preserve-3d;
+
+  --offset-z: 1px;
+}
+
+.hero-3d-group.first {
+  transform: rotateZ(-15deg) translateZ(var(--offset-z));
+}
+
+.hero-3d-group.second {
+  transform: rotateZ(-30deg) translateZ(var(--offset-z));
+}
+
+.hero-3d-group.third {
+  transform: rotateZ(0deg) translateZ(var(--offset-z));
+}
+
+
+/* Each spoke */
+.hero-img3d {
+  position: absolute;
+  top: 0;
+
+  width: 8rem;
+  height: 50%;
+
+  transform-origin: 50% 100%;
+  transform-style: preserve-3d;
+
+  transform: rotateZ(0deg) translateZ(-1px);
+}
+
+.hero-img3d.is-first {
+  transform: rotateZ(-45deg) translateZ(-1px);
+}
+
+.hero-img3d.is-second {
+  transform: rotateZ(-90deg) translateZ(-1px);
+}
+
+.hero-img3d.is-third {
+  transform: rotateZ(-135deg) translateZ(-1px);
+}
+
+.hero-img3d.is-fourth {
+  transform: rotateZ(-180deg) translateZ(-1px);
+}
+
+.hero-img3d.is-fifth {
+  transform: rotateZ(-225deg) translateZ(-1px);
+}
+
+.hero-img3d.is-six {
+  transform: rotateZ(-270deg) translateZ(-1px);
+}
+
+.hero-img3d.is-seven {
+  transform: rotateZ(-315deg) translateZ(-1px);
+}
+
+
+/* THIS is the Next.js Image parent */
+.hero-image-wrapper {
+  position: absolute;
+
+  top: 0;
+  left: 50%;
+
+  width: 8rem;
+  aspect-ratio: 1;
+
+  transform:
+    translateX(-50%)
+    rotateX(90deg);
+
+  transform-style: preserve-3d;
+}
+
+
+/* Actual Next Image */
+.hero-image3d {
+  object-fit: cover;
+
+  border-radius: 0.5rem;
+
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.4);
+
+  backface-visibility: hidden;
+}
+
+/* Next.js Image */
+.hero-image3d {
+  object-fit: cover;
+}
 /* Thin, subtle scrollbar for sidebar and message list */
 ::-webkit-scrollbar {
   width: 4px;
@@ -31,4 +168,4 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #cbd5e1;
-}
+}

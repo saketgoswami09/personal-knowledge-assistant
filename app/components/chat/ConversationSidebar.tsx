@@ -8,9 +8,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { MessageSquare, Plus, X, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import {
+  MessageSquare,
+  Plus,
+  X,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from "lucide-react";
 import { useGetConversationsQuery } from "@/lib/store/api";
-import { LineSidebar } from "@/components/ui/LineSidebar";
+import { LineSidebar } from "@/app/components/ui/LineSidebar";
 
 interface Props {
   activeId: string | null;
@@ -57,36 +63,36 @@ export function ConversationSidebar({
     <>
       {/* Mobile overlay */}
       <div
-        className={`fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity md:hidden ${sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-          }`}
+        className={`fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity md:hidden ${
+          sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
         onClick={onClose}
       />
 
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-50 flex flex-col transform transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] border-r border-gray-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-          } ${collapsed ? "w-[4.5rem]" : "w-64"}`}
+        className={`fixed md:static inset-y-0 left-0 z-50 flex flex-col transform transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] border-r border-gray-200 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        } ${collapsed ? "w-[4.5rem]" : "w-64"}`}
         style={{ backgroundColor: "#FAFAFA" }}
       >
         {/* ── Header ── */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
           {!collapsed && (
             <div className="flex items-center gap-2.5">
-
               <span className="text-sm font-semibold text-gray-900 tracking-tight">
                 <h1>Consious</h1>
               </span>
             </div>
           )}
           {collapsed && (
-            <div className="mx-auto flex items-center justify-center w-9 h-9 rounded-lg ">
-
-            </div>
+            <div className="mx-auto flex items-center justify-center w-9 h-9 rounded-lg "></div>
           )}
 
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className={`hidden md:flex p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors ${collapsed ? "mx-auto mt-2" : ""
-              }`}
+            className={`hidden md:flex p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors ${
+              collapsed ? "mx-auto mt-2" : ""
+            }`}
             title={collapsed ? "Expand" : "Collapse"}
           >
             {collapsed ? (
@@ -105,9 +111,7 @@ export function ConversationSidebar({
         </div>
 
         {/* ── New Chat ── */}
-        <div className={`px-3 pt-4 pb-2 ${collapsed ? "px-2" : ""}`}>
-
-        </div>
+        <div className={`px-3 pt-4 pb-2 ${collapsed ? "px-2" : ""}`}></div>
 
         {/* ── Section Nav (LineSidebar) ── */}
         {!collapsed && (
@@ -140,7 +144,9 @@ export function ConversationSidebar({
         {/* ── Conversation list ── */}
         <div className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
           {isLoading && (
-            <p className={`text-center text-xs text-gray-400 mt-4 ${collapsed ? "px-1" : "px-4"}`}>
+            <p
+              className={`text-center text-xs text-gray-400 mt-4 ${collapsed ? "px-1" : "px-4"}`}
+            >
               {collapsed ? "…" : "Loading conversations…"}
             </p>
           )}
@@ -152,16 +158,21 @@ export function ConversationSidebar({
                 <button
                   key={c.id}
                   onClick={() => handleSelect(c.id)}
-                  className={`group relative flex items-center w-full rounded-xl transition-all duration-150 ${collapsed ? "justify-center p-3" : "gap-3 px-3 py-2"
-                    } ${isActive
+                  className={`group relative flex items-center w-full rounded-xl transition-all duration-150 ${
+                    collapsed ? "justify-center p-3" : "gap-3 px-3 py-2"
+                  } ${
+                    isActive
                       ? "bg-gray-200 text-gray-900"
                       : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                    }`}
+                  }`}
                   title={collapsed ? c.title : undefined}
                 >
                   <MessageSquare
-                    className={`w-4 h-4 shrink-0 transition-colors ${isActive ? "text-gray-700" : "text-gray-400 group-hover:text-gray-600"
-                      }`}
+                    className={`w-4 h-4 shrink-0 transition-colors ${
+                      isActive
+                        ? "text-gray-700"
+                        : "text-gray-400 group-hover:text-gray-600"
+                    }`}
                   />
 
                   {!collapsed && (
@@ -182,7 +193,9 @@ export function ConversationSidebar({
             })}
 
           {!isLoading && conversations.length === 0 && (
-            <p className={`text-center text-xs text-gray-400 mt-4 ${collapsed ? "px-1" : "px-4"}`}>
+            <p
+              className={`text-center text-xs text-gray-400 mt-4 ${collapsed ? "px-1" : "px-4"}`}
+            >
               {collapsed ? "∅" : "No past conversations."}
             </p>
           )}
@@ -195,7 +208,9 @@ export function ConversationSidebar({
               <p className="text-xs font-semibold text-gray-400 tracking-wide uppercase">
                 Knowledge Assistant
               </p>
-              <p className="text-[11px] text-gray-300 mt-0.5">v0.1 · Personal edition</p>
+              <p className="text-[11px] text-gray-300 mt-0.5">
+                v0.1 · Personal edition
+              </p>
             </div>
           ) : (
             <div className="flex justify-center">

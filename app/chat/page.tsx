@@ -24,11 +24,14 @@ import { DefaultChatTransport } from "ai";
 import type { AppUIMessage } from "@/app/api/chat/route";
 import { useEffect, useRef, useState, useMemo } from "react";
 
-import { useCreateConversationMutation, useGetMessagesQuery } from "@/lib/store/api";
-import { ConversationSidebar } from "@/components/chat/ConversationSidebar";
-import { HomeScreen } from "@/components/chat/HomeScreen";
-import { ChatLayout } from "@/components/chat/ChatLayout";
-import { TopNav } from "@/components/chat/TopNav";
+import {
+  useCreateConversationMutation,
+  useGetMessagesQuery,
+} from "@/lib/store/api";
+import { ConversationSidebar } from "@/app/components/chat/ConversationSidebar";
+import { HomeScreen } from "@/app/components/chat/HomeScreen";
+import { ChatLayout } from "@/app/components/chat/ChatLayout";
+import { TopNav } from "@/app/components/chat/TopNav";
 
 // ── Welcome sentinel (never shown in UI, just marks "new chat" state) ─────────
 
@@ -64,9 +67,12 @@ export default function ChatPage() {
 
   // Fetch persisted messages for the active conversation.
   // `skip: true` when no conversation is selected (new chat).
-  const { data: persistedMessages, isFetching } = useGetMessagesQuery(activeId!, {
-    skip: !activeId,
-  });
+  const { data: persistedMessages, isFetching } = useGetMessagesQuery(
+    activeId!,
+    {
+      skip: !activeId,
+    },
+  );
 
   // ── Vercel AI SDK transport ────────────────────────────────────────────────
 
@@ -75,14 +81,14 @@ export default function ChatPage() {
       new DefaultChatTransport({
         api: "/api/chat",
         fetch: async (url, init) => {
-          const currentId = activeIdRef.current;
+          const currentId = activeId;
           const finalUrl = currentId
             ? `${url}?conversationId=${currentId}`
             : url;
           return fetch(finalUrl, init);
         },
       }),
-    []
+    [activeId],
   );
 
   const { messages, setMessages, sendMessage, status, error } =
@@ -134,8 +140,7 @@ export default function ChatPage() {
     // Auto-create a conversation on the first message of a new chat.
     if (!currentId) {
       try {
-        const title =
-          text.slice(0, 40) + (text.length > 40 ? "…" : "");
+        const title = text.slice(0, 40) + (text.length > 40 ? "…" : "");
         const convo = await createConversation({ title }).unwrap();
         currentId = convo.id;
         setActiveId(currentId);

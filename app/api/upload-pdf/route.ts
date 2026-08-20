@@ -39,7 +39,7 @@ import { embedBatch } from "@/lib/embedder";
 import { insertChunk } from "@/lib/supabase";
 import { ValidationError } from "@/lib/errors";
 import { handleApiError } from "@/lib/handle-api-error";
-import { checkRateLimit, LIMITS } from "@/lib/rate-limit";
+import { checkRateLimit, LIMITS, MAX_PDF_SIZE_BYTES, MAX_CHUNKS_PER_REQUEST } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -64,6 +64,15 @@ export async function POST(req: Request) {
       throw new ValidationError(
         `upload-pdf: wrong MIME type '${file.type}'`,
         `Expected a PDF file, received: ${file.type}`
+      );
+    }
+
+    // ── RAG payload guard: file size ──────────────────────────────────────
+    // Checked before arrayBuffer() to avoid reading a huge file into memory.
+    if (file.size > MAX_PDF_SIZE_BYTES) {
+      throw new ValidationError(
+        `upload-pdf: file too large: ${(file.size / 1024 / 1024).toFixed(1)} MB (max ${MAX_PDF_SIZE_BYTES / 1024 / 1024} MB)`,
+        `PDF too large. Maximum allowed size is ${MAX_PDF_SIZE_BYTES / 1024 / 1024} MB.`
       );
     }
 
@@ -95,6 +104,15 @@ export async function POST(req: Request) {
     // Reusing the exact same chunker as /api/ingest — no changes needed there.
     const chunks = chunkByFixedSizeWithOverlap(trimmed, 500, 100);
     console.log(`[PDF Upload] Created ${chunks.length} chunks.`);
+
+    // ── RAG payload guard: chunk count ─────────────────────────────────────
+    // Prevents runaway embedding API costs on unusually dense PDFs.
+    if (chunks.length > MAX_CHUNKS_PER_REQUEST) {
+      throw new ValidationError(
+        `upload-pdf: too many chunks: ${chunks.length} (max ${MAX_CHUNKS_PER_REQUEST})`,
+        `Document is too large to process (${chunks.length} sections). Please split it into smaller files.`
+      );
+    }
 
     // ── 4. Embed all chunks in one batch ─────────────────────────────────────
     const chunkStrings = chunks.map((c) => c.text);
