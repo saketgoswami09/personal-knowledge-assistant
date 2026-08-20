@@ -3,10 +3,9 @@
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 
-// import Navbar from "./Navbar";
+import Navbar from "./Navbar";
 
 import HeroCards from "./HeroCards";
-import heroSky from "./sykbg.jpg";
 
 const Hero = () => {
   const heroContentRef = useRef<HTMLDivElement | null>(null);
@@ -38,10 +37,12 @@ const Hero = () => {
 
   return (
     <div className="bg-[#F7F6F4] p-2.5">
+ 
       <section
         className="relative flex min-h-screen flex-col items-center overflow-hidden rounded-[28px] bg-cover bg-center text-center"
        
       >
+             <Navbar/>
         {/* Dark overlay */}
         <div className="absolute inset-0 z-0 bg-black" />
 
