@@ -4,7 +4,7 @@ import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 
 import Navbar from "./Navbar";
-
+import Link from "next/link";
 import HeroCards from "./HeroCards";
 
 const Hero = () => {
@@ -37,12 +37,8 @@ const Hero = () => {
 
   return (
     <div className="bg-[#F7F6F4] p-2.5">
- 
-      <section
-        className="relative flex min-h-screen flex-col items-center overflow-hidden rounded-[28px] bg-cover bg-center text-center"
-       
-      >
-             <Navbar/>
+      <section className="relative flex min-h-screen flex-col items-center overflow-hidden rounded-[28px] bg-cover bg-center text-center">
+        <Navbar />
         {/* Dark overlay */}
         <div className="absolute inset-0 z-0 bg-black" />
 
@@ -69,18 +65,24 @@ const Hero = () => {
 
             <div className="hero-scroll-text mt-7 flex justify-center gap-4">
               {/* Secondary Button */}
-              <button className="rounded-full border border-white/20 bg-white/10 px-6 py-3 font-mono text-xs font-medium uppercase tracking-[0.18em] text-white backdrop-blur-md transition-all duration-300 hover:scale-105 hover:bg-white/20">
+              <Link
+                href="/chat"
+                className="rounded-full border border-white/20 bg-white/10 px-6 py-3 font-mono text-xs font-medium uppercase tracking-[0.18em] text-white backdrop-blur-md transition-all duration-300 hover:scale-105 hover:bg-white/20"
+              >
                 View Demo
-              </button>
+              </Link>
 
               {/* Primary Button */}
-              <button className="group flex items-center gap-3 rounded-full bg-[#E7D7FF] py-1.5 pl-5 pr-1.5 text-xs font-medium uppercase tracking-[0.18em] text-[#211A2B] transition-all duration-300 hover:scale-105 hover:bg-[#F0E4FF]">
+              <Link
+                href="/chat"
+                className="group flex items-center gap-3 rounded-full bg-[#E7D7FF] py-1.5 pl-5 pr-1.5 text-xs font-medium uppercase tracking-[0.18em] text-[#211A2B] transition-all duration-300 hover:scale-105 hover:bg-[#F0E4FF]"
+              >
                 <span>Get Started</span>
 
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#211A2B] text-white transition-transform duration-300 group-hover:rotate-45">
                   ↗
                 </span>
-              </button>
+              </Link>
             </div>
           </div>
         </div>
