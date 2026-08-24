@@ -9,6 +9,7 @@
 
 import { useRef, useEffect, useState, ComponentPropsWithoutRef } from "react";
 import { Sparkles, User, AlertCircle, Check, Copy } from "lucide-react";
+import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { SourcesPanel } from "./SourceCard";
@@ -176,16 +177,28 @@ export function MessageList({ messages, status, error }: Props) {
                                 {children}
                               </blockquote>
                             ),
-                            a: ({ href, children }) => (
-                              <a
-                                href={href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 underline hover:text-blue-800"
-                              >
-                                {children}
-                              </a>
-                            ),
+                            a: ({ href, children }) => {
+                              if (href === "/upload") {
+                                return (
+                                  <Link
+                                    href={href}
+                                    className="inline-flex items-center gap-1.5 px-4.5 py-2.5 mt-3 bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold rounded-xl shadow-md shadow-violet-100 hover:shadow-violet-200 transition-all cursor-pointer border-none no-underline block w-max select-none"
+                                  >
+                                    {children}
+                                  </Link>
+                                );
+                              }
+                              return (
+                                <a
+                                  href={href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 underline hover:text-blue-800"
+                                >
+                                  {children}
+                                </a>
+                              );
+                            },
                             table: ({ children }) => (
                               <div className="overflow-x-auto my-3 rounded-lg border border-gray-200">
                                 <table className="min-w-full divide-y divide-gray-200 text-xs">

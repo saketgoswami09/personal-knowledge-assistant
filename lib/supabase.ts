@@ -237,3 +237,22 @@ export async function saveMessage(
 
   if (error) throw new DatabaseError(`saveMessage failed: ${error.message}`);
 }
+
+
+/**
+ * Check if the user has any chunks/documents uploaded
+ */
+export async function countUserChunks(userId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from("chunks")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("[Supabase] countUserChunks failed:", error.message);
+    return 0;
+  }
+
+  return count || 0;
+}
+

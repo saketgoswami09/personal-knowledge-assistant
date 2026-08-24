@@ -35,7 +35,7 @@ import {
 } from "ai";
 import { NextResponse } from "next/server";
 import { embed } from "@/lib/embedder";
-import { searchChunks, SearchResult, saveMessage } from "@/lib/supabase";
+import { searchChunks, SearchResult, saveMessage, countUserChunks } from "@/lib/supabase";
 import { handleApiError } from "@/lib/handle-api-error";
 import { checkRateLimit, LIMITS, MAX_CHAT_MESSAGE_CHARS } from "@/lib/rate-limit";
 import { ValidationError } from "@/lib/errors";
@@ -93,6 +93,58 @@ export async function POST(req: Request): Promise<Response> {
         `[ChatRoute] User message too long: ${queryText.length} chars (max ${MAX_CHAT_MESSAGE_CHARS})`,
         `Message too long. Please keep your message under ${MAX_CHAT_MESSAGE_CHARS} characters.`
       );
+    }
+
+    // ── Check empty knowledge base ───────────────────────────────────────────
+    const chunkCount = await countUserChunks(userId);
+    if (chunkCount === 0) {
+      // ── Playful local assistant responses ─────────────────────────────────
+      const WITTY_RESPONSES = [
+        "Of course we can talk, darling 😌 But if you want me to know your secrets, you'll have to give me something to read first. [Upload something 📄](/upload)",
+        "I can talk, darling. But psychic abilities aren't enabled yet. [Upload something 📄](/upload)",
+        "My brain is currently empty. Very peaceful. Very useless. 😭 [Upload something 📄](/upload)",
+        "No documents, no secrets. Feed me something juicy. [Upload something 📄](/upload)",
+        "Your knowledge vault is looking suspiciously empty. [Upload something 📄](/upload)"
+      ];
+      const responseText = WITTY_RESPONSES[Math.floor(Math.random() * WITTY_RESPONSES.length)];
+
+      // Save user message (fire-and-forget)
+      if (conversationId && lastUserMessage) {
+        saveMessage({
+          id: lastUserMessage.id,
+          conversation_id: conversationId,
+          role: "user",
+          content: queryText,
+        }, userId).catch((err) => console.error("[ChatRoute] Failed to save user message:", err));
+      }
+
+      // Save assistant response (fire-and-forget)
+      if (conversationId) {
+        saveMessage({
+          id: crypto.randomUUID(),
+          conversation_id: conversationId,
+          role: "assistant",
+          content: responseText,
+          sources: null,
+        }, userId).catch((err) => console.error("[ChatRoute] Failed to save assistant message:", err));
+      }
+
+      // Stream it back word-by-word with a 60ms delay
+      const words = responseText.split(" ");
+      const stream = createUIMessageStream<AppUIMessage>({
+        execute: async ({ writer }) => {
+          for (let i = 0; i < words.length; i++) {
+            writer.write({
+              type: "text-delta",
+              id: crypto.randomUUID(),
+              delta: words[i] + (i < words.length - 1 ? " " : ""),
+            });
+            await new Promise((resolve) => setTimeout(resolve, 60));
+          }
+        },
+      });
+
+      return createUIMessageStreamResponse({ stream });
     }
 
     // embed() throws EmbeddingError → handleApiError maps it to 502
