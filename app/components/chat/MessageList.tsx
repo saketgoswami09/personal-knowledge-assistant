@@ -102,12 +102,14 @@ export function MessageList({ messages, status, error }: Props) {
           .filter((m) => m.id !== "welcome")
           .map((m) => {
             const textContent = m.parts
-              .filter((p) => p.type === "text")
-              .map((p) => p.text)
-              .join("");
+              ? m.parts
+                  .filter((p) => p.type === "text")
+                  .map((p) => p.text)
+                  .join("")
+              : ((m as any).content as string) || "";
 
             const sources: SearchResult[] =
-              m.role === "assistant"
+              m.role === "assistant" && m.parts
                 ? m.parts
                     .filter((p) => p.type === "data-sources")
                     .flatMap(
@@ -258,8 +260,9 @@ export function MessageList({ messages, status, error }: Props) {
           <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>
-              Something went wrong. Check your API keys in{" "}
-              <code className="font-mono text-xs">.env.local</code>.
+              {error.message && error.message !== "Failed to fetch"
+                ? error.message
+                : "Something went wrong. Please check your connection or server configuration."}
             </span>
           </div>
         )}

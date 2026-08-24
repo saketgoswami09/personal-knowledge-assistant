@@ -133,10 +133,15 @@ export async function POST(req: Request): Promise<Response> {
       const words = responseText.split(" ");
       const stream = createUIMessageStream<AppUIMessage>({
         execute: async ({ writer }) => {
+          const partId = crypto.randomUUID();
+          writer.write({
+            type: "text-start",
+            id: partId,
+          });
           for (let i = 0; i < words.length; i++) {
             writer.write({
               type: "text-delta",
-              id: crypto.randomUUID(),
+              id: partId,
               delta: words[i] + (i < words.length - 1 ? " " : ""),
             });
             await new Promise((resolve) => setTimeout(resolve, 60));
@@ -168,29 +173,70 @@ export async function POST(req: Request): Promise<Response> {
     const topScore = relevantChunks[0]?.similarity ?? 0;
     const hasRelevantContext = topScore >= RELEVANCE_THRESHOLD;
 
-    const sourcesToUse = hasRelevantContext
-      ? relevantChunks.filter((c) => c.similarity >= RELEVANCE_THRESHOLD)
-      : [];
+    if (!hasRelevantContext) {
+      const responseText = `I couldn't find any relevant information about that in the uploaded documents. Please make sure the documents containing this information are uploaded and try again.`;
 
-    const systemPrompt = hasRelevantContext
-      ? `You are a helpful personal knowledge assistant.
-Answer concisely and clearly.
+      // Save assistant response (fire-and-forget)
+      if (conversationId) {
+        saveMessage({
+          id: crypto.randomUUID(),
+          conversation_id: conversationId,
+          role: "assistant",
+          content: responseText,
+          sources: null,
+        }, userId).catch((err) => console.error("[ChatRoute] Failed to save assistant message:", err));
+      }
 
-Here is some context retrieved from the user's knowledge base that is relevant to their question:
+      // Stream it back word-by-word with a 60ms delay
+      const words = responseText.split(" ");
+      const stream = createUIMessageStream<AppUIMessage>({
+        execute: async ({ writer }) => {
+          const partId = crypto.randomUUID();
+          writer.write({
+            type: "text-start",
+            id: partId,
+          });
+          for (let i = 0; i < words.length; i++) {
+            writer.write({
+              type: "text-delta",
+              id: partId,
+              delta: words[i] + (i < words.length - 1 ? " " : ""),
+            });
+            await new Promise((resolve) => setTimeout(resolve, 60));
+          }
+        },
+      });
+
+      return createUIMessageStreamResponse({ stream });
+    }
+
+    const sourcesToUse = relevantChunks.filter((c) => c.similarity >= RELEVANCE_THRESHOLD);
+
+    const systemPrompt = `You are a strict personal knowledge assistant. Your main task is to answer the user's question using ONLY the retrieved context below.
+
 <context>
 ${sourcesToUse.map((chunk, i) => `[Source ${i + 1}]:\n${chunk.text}\n---`).join("\n")}
 </context>
 
-Base your answer on this context. If the context does not fully cover the question, supplement with your general knowledge and say so.`
-      : `You are a helpful personal knowledge assistant.
-Answer concisely and clearly using your general knowledge.
-No specific context has been retrieved from the knowledge base for this question.`;
+CRITICAL RULES FOR GROUNDING AND ACCURACY:
+1. You must answer the user's question ONLY using the factual information explicitly present in the provided retrieved context.
+2. If the retrieved context does not contain the answer, or if the requested information is missing, incomplete, or ambiguous, you must state: "I couldn't find information about [topic/question] in the uploaded documents." Do not try to guess, extrapolate, or use outside knowledge.
+3. NEVER make assumptions, infer, or fabricate any:
+   - Date of birth or age
+   - Phone numbers, email addresses, or physical addresses
+   - Education details (degrees, universities, dates)
+   - Work experience (employers, roles, dates)
+   - Skills, projects, or accomplishments
+   - Any other factual or personal detail not explicitly written in the context.
+4. Do not use any pre-existing or external general knowledge to answer questions about people or their documents. The provided context is your entire universe of facts.
+5. If the context does not explicitly mention the answer to the question, confidently and clearly say that the information was not found. Do not apologize, and do not say "based on my general knowledge...". Just report the fact.
+6. Every fact in your answer must be traceable directly to the provided sources. Do not invent any fact under any circumstance.`;
 
     const result = streamText({
       model: groq("openai/gpt-oss-20b"),
       system: systemPrompt,
       messages: await convertToModelMessages(messages),
-      temperature: 0.7,
+      temperature: 0.1,
       onFinish: async ({ text }) => {
         // ── Save assistant message when streaming completes ──────────────────
         if (conversationId) {
@@ -208,12 +254,10 @@ No specific context has been retrieved from the knowledge base for this question
     // ── Multiplex (optional) sources + text into a single stream ──────────────
     const stream = createUIMessageStream<AppUIMessage>({
       execute: async ({ writer }) => {
-        if (hasRelevantContext) {
-          writer.write({
-            type: "data-sources",
-            data: sourcesToUse,
-          });
-        }
+        writer.write({
+          type: "data-sources",
+          data: sourcesToUse,
+        });
 
         writer.merge(result.toUIMessageStream());
       },
