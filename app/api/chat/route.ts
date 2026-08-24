@@ -135,7 +135,7 @@ Answer concisely and clearly using your general knowledge.
 No specific context has been retrieved from the knowledge base for this question.`;
 
     const result = streamText({
-      model: groq("llama-3.3-70b-versatile"),
+      model: groq("openai/gpt-oss-20b"),
       system: systemPrompt,
       messages: await convertToModelMessages(messages),
       temperature: 0.7,

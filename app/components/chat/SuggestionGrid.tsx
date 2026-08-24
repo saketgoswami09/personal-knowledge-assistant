@@ -6,7 +6,7 @@
  * A grid of clickable suggestion cards. Clicking a card fills the input.
  */
 
-import { FileText, StickyNote, Code2, BookOpen } from "lucide-react";
+import { User2, Award, Briefcase, FileSearch } from "lucide-react";
 
 interface Suggestion {
   icon: React.ReactNode;
@@ -16,24 +16,24 @@ interface Suggestion {
 
 const SUGGESTIONS: Suggestion[] = [
   {
-    icon: <FileText className="w-4 h-4" />,
-    title: "Analyze my PDF",
-    prompt: "Analyze the PDF I've uploaded and give me a detailed summary.",
+    icon: <User2 className="w-4.5 h-4.5 text-violet-500" />,
+    title: "Who am I?",
+    prompt: "Who am I according to my uploaded documents and profile? Give me a concise overview.",
   },
   {
-    icon: <StickyNote className="w-4 h-4" />,
-    title: "Summarize notes",
-    prompt: "Summarize all the notes from my uploaded documents.",
+    icon: <Award className="w-4.5 h-4.5 text-emerald-500" />,
+    title: "What skills do I have?",
+    prompt: "What skills, technologies, and core expertises are highlighted across my uploaded files?",
   },
   {
-    icon: <Code2 className="w-4 h-4" />,
-    title: "Generate API docs",
-    prompt: "Generate clear API documentation for a REST endpoint.",
+    icon: <FileSearch className="w-4.5 h-4.5 text-blue-500" />,
+    title: "Summarize my knowledge",
+    prompt: "Summarize the key knowledge areas and documents in my uploaded files.",
   },
   {
-    icon: <BookOpen className="w-4 h-4" />,
-    title: "Explain a concept",
-    prompt: "Explain a concept from my uploaded documents in simple terms.",
+    icon: <Briefcase className="w-4.5 h-4.5 text-amber-500" />,
+    title: "What projects have I worked on?",
+    prompt: "What projects, contributions, and case studies did I work on according to my knowledge base?",
   },
 ];
 
@@ -43,26 +43,43 @@ interface Props {
 
 export function SuggestionGrid({ onSelect }: Props) {
   return (
-    <div className="flex flex-wrap justify-center gap-2.5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 w-full max-w-2xl mt-4">
       {SUGGESTIONS.map((s) => (
         <button
           key={s.title}
           onClick={() => onSelect(s.prompt)}
           className="
-            flex items-center gap-2
-            px-4 py-2.5
-            rounded-xl
-            border border-gray-200
-            bg-white
-            text-sm font-medium text-gray-700
-            hover:bg-gray-50 hover:border-gray-300
+            flex items-start gap-3.5
+            p-4.5
+            rounded-2xl
+            border border-gray-100/80
+            bg-white/80
+            backdrop-blur-sm
+            text-left
+            hover:bg-gradient-to-br hover:from-white hover:to-violet-50/10 hover:border-violet-200/60 hover:shadow-md
             cursor-pointer
-            transition-all duration-150
+            transition-all duration-300 ease-out
             shadow-sm
+            group
           "
         >
-          <span className="text-gray-400">{s.icon}</span>
-          {s.title}
+          <div className="
+            flex items-center justify-center 
+            w-9 h-9 rounded-xl 
+            bg-gray-50 group-hover:bg-violet-50 
+            transition-colors duration-300
+            shrink-0
+          ">
+            {s.icon}
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-sm font-semibold text-gray-800 group-hover:text-violet-900 transition-colors">
+              {s.title}
+            </span>
+            <span className="text-xs text-gray-500 line-clamp-1">
+              {s.prompt}
+            </span>
+          </div>
         </button>
       ))}
     </div>
