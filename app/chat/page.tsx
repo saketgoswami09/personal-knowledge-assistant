@@ -54,6 +54,10 @@ export default function ChatPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Track if a conversation was newly created in the current active session
+  // to prevent database fetches from wiping out the in-flight chat stream state.
+  const newlyCreatedIdRef = useRef<string | null>(null);
+
   // Keep a stable ref to activeId so the transport closure always reads
   // the latest value without triggering transport reconstruction.
   const activeIdRef = useRef(activeId);
@@ -81,19 +85,19 @@ export default function ChatPage() {
       new DefaultChatTransport({
         api: "/api/chat",
         fetch: async (url, init) => {
-          const currentId = activeId;
+          const currentId = activeIdRef.current;
           const finalUrl = currentId
             ? `${url}?conversationId=${currentId}`
             : url;
           return fetch(finalUrl, init);
         },
       }),
-    [activeId],
+    [],
   );
 
   const { messages, setMessages, sendMessage, status, error } =
     useChat<AppUIMessage>({
-      id: activeId || "new",
+      id: "conscious-chat",
       transport,
       messages: [WELCOME_MESSAGE],
     });
@@ -103,6 +107,10 @@ export default function ChatPage() {
   useEffect(() => {
     // Prevent syncing stale cached messages from a previously active conversation while fetching the new one.
     if (!activeId || !persistedMessages || isFetching) return;
+
+    // Skip syncing if this conversation was just created in this active chat session
+    // to prevent the empty database query from overwriting the active stream.
+    if (newlyCreatedIdRef.current === activeId) return;
 
     const uiMsgs: AppUIMessage[] = persistedMessages.map((m) => {
       const parts: AppUIMessage["parts"] = [];
@@ -143,6 +151,7 @@ export default function ChatPage() {
         const title = text.slice(0, 40) + (text.length > 40 ? "…" : "");
         const convo = await createConversation({ title }).unwrap();
         currentId = convo.id;
+        newlyCreatedIdRef.current = currentId;
         setActiveId(currentId);
         // Sync ref immediately so the in-flight fetch uses the new ID.
         activeIdRef.current = currentId;
@@ -156,10 +165,12 @@ export default function ChatPage() {
   };
 
   const handleSelectConversation = (id: string) => {
+    newlyCreatedIdRef.current = null;
     setActiveId(id);
   };
 
   const handleNewChat = () => {
+    newlyCreatedIdRef.current = null;
     setActiveId(null);
     setInputValue("");
   };
