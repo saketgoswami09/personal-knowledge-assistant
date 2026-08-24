@@ -83,8 +83,9 @@ export default function UploadPage() {
       setState({ status: "done", result: json as UploadResult });
       setSelectedFile(null);
       if (inputRef.current) inputRef.current.value = "";
-    } catch (err: any) {
-      setState({ status: "error", message: err.message || "Something went wrong." });
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Something went wrong.";
+      setState({ status: "error", message: errorMessage });
     }
   };
 
@@ -223,7 +224,7 @@ export default function UploadPage() {
                 { label: "Chunks saved", value: state.result.chunksCreated },
               ].map(({ label, value }) => (
                 <div key={label} className="bg-white rounded-xl px-4 py-3 border border-emerald-100 text-center">
-                  <p className="text-lg font-bold text-grayald-900">{value}</p>
+                  <p className="text-lg font-bold text-emerald-900">{value}</p>
                   <p className="text-xs text-gray-500 mt-0.5">{label}</p>
                 </div>
               ))}

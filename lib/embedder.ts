@@ -43,9 +43,10 @@ export async function embed(text: string): Promise<number[]> {
     });
     // HF returns number[] for a single string input
     return result as number[];
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
     throw new EmbeddingError(
-      `embed() failed — HuggingFace error: ${err?.message ?? err}`
+      `embed() failed — HuggingFace error: ${errorMsg}`
     );
   }
 }
@@ -62,9 +63,10 @@ export async function embedBatch(texts: string[]): Promise<number[][]> {
     });
     // HF returns number[][] for an array input
     return result as number[][];
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
     throw new EmbeddingError(
-      `embedBatch() failed — HuggingFace error: ${err?.message ?? err}`
+      `embedBatch() failed — HuggingFace error: ${errorMsg}`
     );
   }
 }

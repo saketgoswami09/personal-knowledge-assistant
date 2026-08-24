@@ -114,9 +114,12 @@ export function LineSidebar({
   const activeRef = useRef<number | null>(defaultActive);
   const smoothingRef = useRef<number>(smoothing);
   const [activeIndex, setActiveIndex] = useState<number | null>(defaultActive);
+  const runFrameRef = useRef<(now: number) => void>(() => {});
 
-  activeRef.current = activeIndex;
-  smoothingRef.current = smoothing;
+  useEffect(() => {
+    activeRef.current = activeIndex;
+    smoothingRef.current = smoothing;
+  }, [activeIndex, smoothing]);
 
   // Single rAF loop that eases every item's --effect toward its target using
   // frame-rate independent exponential smoothing, so color, shift and scale
@@ -145,14 +148,18 @@ export function LineSidebar({
       if (!settled) moving = true;
     }
 
-    rafRef.current = moving ? requestAnimationFrame(runFrame) : null;
+    rafRef.current = moving ? requestAnimationFrame((time) => runFrameRef.current(time)) : null;
   }, []);
+
+  useEffect(() => {
+    runFrameRef.current = runFrame;
+  }, [runFrame]);
 
   const startLoop = useCallback(() => {
     if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
     lastRef.current = performance.now();
-    rafRef.current = requestAnimationFrame(runFrame);
-  }, [runFrame]);
+    rafRef.current = requestAnimationFrame((time) => runFrameRef.current(time));
+  }, []);
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent<HTMLUListElement>) => {

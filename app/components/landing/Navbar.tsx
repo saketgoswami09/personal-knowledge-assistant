@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
+import { SignInButton, SignUpButton, UserButton, Show } from "@clerk/nextjs";
 
 const Navbar = () => {
   const navRef = useRef<HTMLElement | null>(null);
@@ -59,9 +60,31 @@ const Navbar = () => {
       </div>
 
       {/* CTA */}
-      <button className="nav-animate rounded-full bg-[#d6fd70] px-5 py-3 text-xs font-normal uppercase tracking-[0.12em] text-black">
-        GET STARTED
-      </button>
+      <div className="flex items-center gap-5">
+        <Show when="signed-out">
+          <SignInButton mode="modal">
+            <button className="nav-animate cursor-pointer uppercase tracking-[0.12em] hover:text-[#d6fd70] transition-colors">
+              SIGN IN
+            </button>
+          </SignInButton>
+          <SignUpButton mode="modal">
+            <button className="nav-animate cursor-pointer rounded-full bg-[#d6fd70] px-5 py-3 text-xs font-normal uppercase tracking-[0.12em] text-black hover:bg-white hover:text-black transition-colors">
+              GET STARTED
+            </button>
+          </SignUpButton>
+        </Show>
+        <Show when="signed-in">
+          <a
+            href="/chat"
+            className="nav-animate cursor-pointer rounded-full bg-[#d6fd70] px-5 py-3 text-xs font-normal uppercase tracking-[0.12em] text-black hover:bg-white hover:text-black transition-colors"
+          >
+            GO TO CHAT
+          </a>
+          <div className="nav-animate flex items-center justify-center">
+            <UserButton />
+          </div>
+        </Show>
+      </div>
     </nav>
   );
 };

@@ -82,7 +82,7 @@
  *   checkRateLimit(req, LIMITS.chat, user?.id);
  */
 
-import { RateLimitError } from "./errors";
+import { RateLimitError } from "./errors.ts";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Configuration

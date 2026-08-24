@@ -33,11 +33,13 @@ import {
   streamText,
   UIMessage,
 } from "ai";
+import { NextResponse } from "next/server";
 import { embed } from "@/lib/embedder";
 import { searchChunks, SearchResult, saveMessage } from "@/lib/supabase";
 import { handleApiError } from "@/lib/handle-api-error";
 import { checkRateLimit, LIMITS, MAX_CHAT_MESSAGE_CHARS } from "@/lib/rate-limit";
 import { ValidationError } from "@/lib/errors";
+import { auth } from "@clerk/nextjs/server";
 
 // ── Augment the UIMessage type to include our custom `data-sources` part ──────
 // This is the v7 pattern for typed custom data: declare a DATA_TYPES map,
@@ -62,6 +64,11 @@ export async function POST(req: Request): Promise<Response> {
   try {
     // ── Rate limit — checked first, before any I/O ──────────────────────────
     checkRateLimit(req, LIMITS.chat);
+
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const { searchParams } = new URL(req.url);
     const conversationId = searchParams.get("conversationId");
@@ -91,7 +98,7 @@ export async function POST(req: Request): Promise<Response> {
     // embed() throws EmbeddingError → handleApiError maps it to 502
     const queryEmbedding = await embed(queryText);
     // searchChunks() throws RetrievalError → handleApiError maps it to 502
-    const relevantChunks = await searchChunks(queryEmbedding, 3);
+    const relevantChunks = await searchChunks(queryEmbedding, userId, 3);
 
     // ── RAG STEP 4.5: Save user message ──────────────────────────────────────
     // Fire-and-forget — persistence failure must not break the chat response.
@@ -102,7 +109,7 @@ export async function POST(req: Request): Promise<Response> {
         conversation_id: conversationId,
         role: "user",
         content: queryText,
-      }).catch((err) => console.error("[ChatRoute] Failed to save user message:", err));
+      }, userId).catch((err) => console.error("[ChatRoute] Failed to save user message:", err));
     }
 
     // ── RAG STEP 5: Relevance gate + Prompt Injection ───────────────────────
@@ -141,7 +148,7 @@ No specific context has been retrieved from the knowledge base for this question
             role: "assistant",
             content: text,
             sources: sourcesToUse.length > 0 ? sourcesToUse : null,
-          }).catch((err) => console.error("[ChatRoute] Failed to save assistant message:", err));
+          }, userId).catch((err) => console.error("[ChatRoute] Failed to save assistant message:", err));
         }
       },
     });

@@ -36,10 +36,11 @@ import { NextResponse } from "next/server";
 import { extractText, getDocumentProxy } from "unpdf";
 import { chunkByFixedSizeWithOverlap } from "@/lib/chunker";
 import { embedBatch } from "@/lib/embedder";
-import { insertChunk } from "@/lib/supabase";
+import { insertChunksBatch } from "@/lib/supabase";
 import { ValidationError } from "@/lib/errors";
 import { handleApiError } from "@/lib/handle-api-error";
 import { checkRateLimit, LIMITS, MAX_PDF_SIZE_BYTES, MAX_CHUNKS_PER_REQUEST } from "@/lib/rate-limit";
+import { auth } from "@clerk/nextjs/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -48,6 +49,11 @@ export async function POST(req: Request) {
   try {
     // ── Rate limit — checked first, before expensive PDF I/O ────────────────
     checkRateLimit(req, LIMITS.uploadPdf);
+
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     // ── 1. Parse the multipart body ──────────────────────────────────────────
     const formData = await req.formData();
@@ -119,13 +125,13 @@ export async function POST(req: Request) {
     console.log(`[PDF Upload] Embedding ${chunks.length} chunks...`);
     const embeddings = await embedBatch(chunkStrings);
 
-    // ── 5. Save each chunk + embedding to Supabase ───────────────────────────
-    console.log(`[PDF Upload] Saving to Supabase...`);
-    const insertedRecords = [];
-    for (let i = 0; i < chunks.length; i++) {
-      const record = await insertChunk(chunks[i].text, embeddings[i]);
-      insertedRecords.push(record);
-    }
+    // ── 5. Save chunks + embeddings to Supabase in batch ───────────────────
+    console.log(`[PDF Upload] Saving ${chunks.length} chunks to Supabase in batch for user ${userId}...`);
+    const chunksWithEmbeddings = chunks.map((c, i) => ({
+      text: c.text,
+      embedding: embeddings[i],
+    }));
+    const insertedRecords = await insertChunksBatch(chunksWithEmbeddings, userId);
 
     console.log(`[PDF Upload] Done! Saved ${insertedRecords.length} chunks.`);
 

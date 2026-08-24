@@ -7,6 +7,7 @@
  * in the chat layout. Accepts an optional placeholder override.
  */
 
+import Link from "next/link";
 import { ArrowUp, Paperclip } from "lucide-react";
 
 interface Props {
@@ -70,14 +71,15 @@ export function FloatingInput({
 
         {/* Bottom action row */}
         <div className="flex items-center justify-between px-3 pb-3 pt-1">
-          {/* Attach */}
-          <button
-            type="button"
-            className="flex items-center justify-center w-9 h-9 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
-            aria-label="Attach file"
+          {/* Attach / Upload */}
+          <Link
+            href="/upload"
+            className="flex items-center justify-center w-9 h-9 rounded-full text-gray-400 hover:text-violet-600 hover:bg-violet-50 transition-all"
+            aria-label="Upload document to knowledge base"
+            title="Upload document to knowledge base"
           >
             <Paperclip className="w-4 h-4" />
-          </button>
+          </Link>
 
           {/* Send */}
           <button

@@ -8,6 +8,7 @@
 
 import Link from "next/link";
 import { FileText, Menu } from "lucide-react";
+import { UserButton } from "@clerk/nextjs";
 
 interface Props {
   onMenuOpen: () => void;
@@ -58,8 +59,8 @@ export function TopNav({ onMenuOpen, status, chatMode }: Props) {
           <span className="hidden sm:inline">Upload</span>
         </Link>
 
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center text-xs font-bold text-white ml-1 cursor-pointer hover:opacity-90 transition-opacity">
-          U
+        <div className="ml-1 flex items-center justify-center">
+          <UserButton />
         </div>
       </nav>
     </header>

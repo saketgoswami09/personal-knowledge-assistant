@@ -108,7 +108,7 @@ export default function ChatPage() {
       const parts: AppUIMessage["parts"] = [];
       if (m.sources && m.sources.length > 0) {
         // Re-attach source data so SourcesPanel renders correctly.
-        parts.push({ type: "data-sources", data: m.sources } as any);
+        parts.push({ type: "data-sources" as const, data: m.sources });
       }
       parts.push({ type: "text", text: m.content });
       return { id: m.id, role: m.role, parts };

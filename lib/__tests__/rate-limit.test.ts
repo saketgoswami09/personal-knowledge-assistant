@@ -11,7 +11,7 @@
  * package.json scripts.
  */
 
-import { describe, it, beforeEach, mock } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

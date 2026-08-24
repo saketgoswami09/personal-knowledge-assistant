@@ -26,7 +26,6 @@ import {
   rankBySimilarity,
   dotProduct,
   magnitude,
-  cosineSimilarity,
   EmbeddedChunk,
 } from "@/lib/embedder";
 import { NextResponse } from "next/server";

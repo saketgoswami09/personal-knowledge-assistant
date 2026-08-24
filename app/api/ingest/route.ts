@@ -17,15 +17,21 @@
 import { NextResponse } from "next/server";
 import { chunkByFixedSizeWithOverlap } from "@/lib/chunker";
 import { embedBatch } from "@/lib/embedder";
-import { insertChunk } from "@/lib/supabase";
+import { insertChunksBatch } from "@/lib/supabase";
 import { ValidationError } from "@/lib/errors";
 import { handleApiError } from "@/lib/handle-api-error";
 import { checkRateLimit, LIMITS } from "@/lib/rate-limit";
+import { auth } from "@clerk/nextjs/server";
 
 export async function POST(req: Request) {
   try {
     // ── Rate limit — checked first, before any I/O ──────────────────────────
     checkRateLimit(req, LIMITS.ingest);
+
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const body = await req.json();
     const text = body.text;
@@ -50,15 +56,13 @@ export async function POST(req: Request) {
     console.log(`[Ingest] Fetching embeddings from Hugging Face...`);
     const embeddings = await embedBatch(chunkStrings);
 
-    // ── Step 3: Save to Supabase Vector Store ───────────────────────────────
-    console.log(`[Ingest] Saving to Supabase...`);
-    const insertedRecords = [];
-
-    // We insert them one by one for simplicity (you could also batch insert)
-    for (let i = 0; i < chunks.length; i++) {
-      const record = await insertChunk(chunks[i].text, embeddings[i]);
-      insertedRecords.push(record);
-    }
+    // ── Step 3: Save to Supabase Vector Store in batch ──────────────────────
+    console.log(`[Ingest] Saving ${chunks.length} chunks to Supabase in batch for user ${userId}...`);
+    const chunksWithEmbeddings = chunks.map((c, i) => ({
+      text: c.text,
+      embedding: embeddings[i],
+    }));
+    const insertedRecords = await insertChunksBatch(chunksWithEmbeddings, userId);
 
     console.log(`[Ingest] Success! Saved ${insertedRecords.length} chunks.`);
 
