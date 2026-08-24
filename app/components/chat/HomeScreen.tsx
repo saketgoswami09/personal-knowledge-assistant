@@ -206,11 +206,10 @@ export function HomeScreen({ value, onChange, onSubmit, disabled }: Props) {
     setGreetingText(GREETINGS[randomIdx]);
   }, []);
 
-  // Check onboarding status in localStorage, user-scoped by their Clerk user ID
+  // Force onboarding status to show every time
   useEffect(() => {
     if (isLoaded && user?.id) {
-      const completed = localStorage.getItem(`conscious_onboarding_completed_${user.id}`);
-      setShowOnboarding(completed !== "true");
+      setShowOnboarding(true);
       setOnboardingLoaded(true);
     }
   }, [isLoaded, user?.id]);
