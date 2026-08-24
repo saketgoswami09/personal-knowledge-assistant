@@ -15,9 +15,10 @@ import {
   X,
   PanelLeftClose,
   PanelLeftOpen,
+  Trash2,
 } from "lucide-react";
 
-import { useGetConversationsQuery } from "@/lib/store/api";
+import { useGetConversationsQuery, useDeleteConversationMutation } from "@/lib/store/api";
 import { LineSidebar } from "@/app/components/ui/LineSidebar";
 
 interface Props {
@@ -37,6 +38,9 @@ export function ConversationSidebar({
 }: Props) {
   const { data: conversations = [], isLoading } =
     useGetConversationsQuery();
+
+  const [deleteConversationMutation] = useDeleteConversationMutation();
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const [collapsed, setCollapsed] = useState(false);
   const router = useRouter();
@@ -212,34 +216,48 @@ export function ConversationSidebar({
                 const isActive = activeId === conversation.id;
 
                 return (
-                  <button
-                    key={conversation.id}
-                    onClick={() => handleSelect(conversation.id)}
-                    title={collapsed ? conversation.title : undefined}
-                    className={`group flex w-full items-center rounded-lg transition-colors ${
-                      collapsed
-                        ? "mb-1 h-10 justify-center"
-                        : "mb-0.5 h-10 gap-2.5 px-2.5"
-                    } ${
-                      isActive
-                        ? "bg-[#F3F0FA] text-gray-900"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                    }`}
-                  >
-                    <MessageSquare
-                      className={`h-[15px] w-[15px] shrink-0 ${
+                  <div key={conversation.id} className="group relative mb-0.5 flex w-full items-center">
+                    <button
+                      onClick={() => handleSelect(conversation.id)}
+                      title={collapsed ? conversation.title : undefined}
+                      className={`flex w-full items-center rounded-lg transition-colors ${
+                        collapsed
+                          ? "h-10 justify-center w-full"
+                          : "h-10 gap-2.5 pl-2.5 pr-10 w-full"
+                      } ${
                         isActive
-                          ? "text-[#8E79B8]"
-                          : "text-gray-400 group-hover:text-gray-600"
+                          ? "bg-[#F3F0FA] text-gray-900 font-semibold"
+                          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                       }`}
-                    />
+                    >
+                      <MessageSquare
+                        className={`h-[15px] w-[15px] shrink-0 ${
+                          isActive
+                            ? "text-[#8E79B8]"
+                            : "text-gray-400 group-hover:text-gray-600"
+                        }`}
+                      />
+
+                      {!collapsed && (
+                        <span className="min-w-0 flex-1 truncate text-left text-[13px] font-medium">
+                          {conversation.title}
+                        </span>
+                      )}
+                    </button>
 
                     {!collapsed && (
-                      <span className="min-w-0 flex-1 truncate text-left text-[13px] font-medium">
-                        {conversation.title}
-                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteTargetId(conversation.id);
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-100 md:opacity-0 md:group-hover:opacity-100 p-1.5 rounded-md hover:bg-red-50 text-gray-400 hover:text-red-500 transition-all cursor-pointer"
+                        title="Delete conversation"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                     )}
-                  </button>
+                  </div>
                 );
               })}
 
@@ -282,6 +300,43 @@ export function ConversationSidebar({
           )}
         </div>
       </aside>
+
+      {/* ───────── Delete Confirmation Modal ───────── */}
+      {deleteTargetId && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-xs">
+          <div className="w-80 rounded-2xl bg-white p-5 shadow-xl border border-gray-100">
+            <h3 className="text-sm font-semibold text-gray-900">Delete Conversation?</h3>
+            <p className="mt-2 text-xs text-gray-500 leading-relaxed">
+              Delete this conversation? This can't be undone.
+            </p>
+            <div className="mt-5 flex justify-end gap-2.5">
+              <button
+                onClick={() => setDeleteTargetId(null)}
+                className="rounded-lg border border-gray-200 px-3.5 py-2 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  const idToDelete = deleteTargetId;
+                  setDeleteTargetId(null);
+                  try {
+                    if (activeId === idToDelete) {
+                      onNew();
+                    }
+                    await deleteConversationMutation(idToDelete).unwrap();
+                  } catch (err) {
+                    console.error("Failed to delete conversation:", err);
+                  }
+                }}
+                className="rounded-lg bg-red-600 px-3.5 py-2 text-xs font-medium text-white hover:bg-red-700 cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

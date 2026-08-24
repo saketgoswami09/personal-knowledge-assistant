@@ -63,6 +63,31 @@ export const conversationsApi = createApi({
       query: (id) => `/conversations/${id}/messages`,
       providesTags: (_result, _err, id) => [{ type: "Message", id }],
     }),
+
+    // ── DELETE /api/conversations/:id ──────────────────────────────────────────
+    deleteConversation: builder.mutation<{ success: boolean }, string>({
+      query: (id) => ({
+        url: `/conversations/${id}`,
+        method: "DELETE",
+      }),
+      // Optimistically remove conversation from the list
+      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+        const patchResult = dispatch(
+          conversationsApi.util.updateQueryData(
+            "getConversations",
+            undefined,
+            (draft) => {
+              return draft.filter((convo) => convo.id !== id);
+            }
+          )
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+        }
+      },
+    }),
   }),
 });
 
@@ -70,4 +95,5 @@ export const {
   useGetConversationsQuery,
   useCreateConversationMutation,
   useGetMessagesQuery,
+  useDeleteConversationMutation,
 } = conversationsApi;

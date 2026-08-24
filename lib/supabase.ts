@@ -182,6 +182,37 @@ export async function getConversations(userId: string): Promise<DbConversation[]
   return data as DbConversation[];
 }
 
+export async function deleteConversation(conversationId: string, userId: string): Promise<void> {
+  // Verify ownership of the conversation first
+  const { data: convo, error: convoError } = await supabase
+    .from("conversations")
+    .select("user_id")
+    .eq("id", conversationId)
+    .single();
+
+  if (convoError) {
+    if (convoError.code === "PGRST116") {
+      // Gracefully handle nonexistent conversation
+      return;
+    }
+    throw new DatabaseError(`deleteConversation ownership check failed: ${convoError.message}`);
+  }
+
+  if (!convo || convo.user_id !== userId) {
+    throw new DatabaseError("Conversation not found or access denied");
+  }
+
+  const { error } = await supabase
+    .from("conversations")
+    .delete()
+    .eq("id", conversationId)
+    .eq("user_id", userId);
+
+  if (error) {
+    throw new DatabaseError(`deleteConversation failed: ${error.message}`);
+  }
+}
+
 export async function getMessages(conversationId: string, userId: string): Promise<DbMessage[]> {
   // Verify ownership of the conversation first
   const { data: convo, error: convoError } = await supabase
