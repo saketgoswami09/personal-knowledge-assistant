@@ -13,8 +13,6 @@ import card6 from "./card-6.avif";
 import card7 from "./card-7.avif";
 import card8 from "./card-8.avif";
 
-import { AsciiParticleHero, JUPITER_ART } from "./AsciiParticleHero";
-
 const cards = [
   card1,
   card2,
@@ -122,11 +120,8 @@ const HeroCards = () => {
   }, []);
 
   return (
-    <div ref={rootRef} className="hero-3d relative w-full h-[520px]">
-      <div className="absolute inset-0 -z-10">
-        <AsciiParticleHero art={JUPITER_ART} />
-      </div>
-      <div className="hero-3d-wrap pointer-events-none">
+    <div ref={rootRef} className="hero-3d">
+      <div className="hero-3d-wrap">
         {groups.map((group) => (
           <div
             key={group.name}
@@ -135,7 +130,7 @@ const HeroCards = () => {
             {group.cards.map((image, index) => (
               <div
                 key={`${group.name}-${index}`}
-                className={`hero-img3d ${positions[index]} pointer-events-auto`}
+                className={`hero-img3d ${positions[index]}`}
               >
                 <div className="hero-image-wrapper">
                   <Image

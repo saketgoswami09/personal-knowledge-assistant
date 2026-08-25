@@ -6,6 +6,7 @@ import gsap from "gsap";
 import Navbar from "./Navbar";
 import Link from "next/link";
 import HeroCards from "./HeroCards";
+import { AsciiParticleHero, JUPITER_ART } from "./AsciiParticleHero";
 
 const Hero = () => {
   const heroContentRef = useRef<HTMLDivElement | null>(null);
@@ -40,10 +41,15 @@ const Hero = () => {
       <section className="relative flex min-h-screen flex-col items-center overflow-hidden rounded-[28px] bg-cover bg-center text-center">
         <Navbar />
         {/* Deep dark cosmic background */}
-        <div className="absolute inset-0 z-0 " />
+        <div className="absolute inset-0 z-0 bg-[#090615]" />
 
         {/* Gradient overlay for blending and readability */}
-        <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#090615]/30 via-[#090615]/20 to-[#090615]/90" />
+        <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#090615]/30 via-[#090615]/20 to-[#090615]/50" />
+
+        {/* Interactive ASCII Particle Background directly behind heading text */}
+        <div className="absolute inset-0 z-0 opacity-70">
+          <AsciiParticleHero art={JUPITER_ART} />
+        </div>
 
         <div
           ref={heroContentRef}
