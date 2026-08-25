@@ -39,11 +39,11 @@ const Hero = () => {
     <div className="bg-[#F7F6F4] p-2.5">
       <section className="relative flex min-h-screen flex-col items-center overflow-hidden rounded-[28px] bg-cover bg-center text-center">
         <Navbar />
-        {/* Dark overlay */}
-        <div className="absolute inset-0 z-0 bg-black" />
+        {/* Deep dark cosmic background */}
+        <div className="absolute inset-0 z-0 bg-[#090615]" />
 
-        {/* Optional gradient overlay for better readability */}
-        <div className="absolute inset-0 z-0 bg-gradient-to-b from-black/30 via-black/20 to-black/50" />
+        {/* Gradient overlay for blending and readability */}
+        <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#090615]/30 via-[#090615]/20 to-[#090615]/50" />
 
         <div
           ref={heroContentRef}
