@@ -35,9 +35,18 @@ import {
 } from "ai";
 import { NextResponse } from "next/server";
 import { embed } from "@/lib/embedder";
-import { searchChunks, SearchResult, saveMessage, countUserChunks } from "@/lib/supabase";
+import {
+  searchChunks,
+  SearchResult,
+  saveMessage,
+  countUserChunks,
+} from "@/lib/supabase";
 import { handleApiError } from "@/lib/handle-api-error";
-import { checkRateLimit, LIMITS, MAX_CHAT_MESSAGE_CHARS } from "@/lib/rate-limit";
+import {
+  checkRateLimit,
+  LIMITS,
+  MAX_CHAT_MESSAGE_CHARS,
+} from "@/lib/rate-limit";
 import { ValidationError } from "@/lib/errors";
 import { auth } from "@clerk/nextjs/server";
 
@@ -77,13 +86,12 @@ export async function POST(req: Request): Promise<Response> {
     const { messages }: { messages: AppUIMessage[] } = await req.json();
 
     // ── RAG STEP 4: Retrieval ────────────────────────────────────────────────
-    const lastUserMessage = messages
-      .filter((m) => m.role === "user")
-      .pop();
+    const lastUserMessage = messages.filter((m) => m.role === "user").pop();
 
-    const queryText = lastUserMessage?.parts?.reduce((text, part) => {
-      return text + (part.type === "text" ? part.text : "");
-    }, "") || "Hello";
+    const queryText =
+      lastUserMessage?.parts?.reduce((text, part) => {
+        return text + (part.type === "text" ? part.text : "");
+      }, "") || "Hello";
 
     // ── RAG payload guard: message length ───────────────────────────────────
     // Reject before embed/LLM if the message is unreasonably long.
@@ -91,7 +99,7 @@ export async function POST(req: Request): Promise<Response> {
     if (queryText.length > MAX_CHAT_MESSAGE_CHARS) {
       throw new ValidationError(
         `[ChatRoute] User message too long: ${queryText.length} chars (max ${MAX_CHAT_MESSAGE_CHARS})`,
-        `Message too long. Please keep your message under ${MAX_CHAT_MESSAGE_CHARS} characters.`
+        `Message too long. Please keep your message under ${MAX_CHAT_MESSAGE_CHARS} characters.`,
       );
     }
 
@@ -100,33 +108,44 @@ export async function POST(req: Request): Promise<Response> {
     if (chunkCount === 0) {
       // ── Playful local assistant responses ─────────────────────────────────
       const WITTY_RESPONSES = [
-        "Of course we can talk, darling 😌 But if you want me to know your secrets, you'll have to give me something to read first. [Upload something 📄](/upload)",
-        "I can talk, darling. But psychic abilities aren't enabled yet. [Upload something 📄](/upload)",
-        "My brain is currently empty. Very peaceful. Very useless. 😭 [Upload something 📄](/upload)",
-        "No documents, no secrets. Feed me something juicy. [Upload something 📄](/upload)",
-        "Your knowledge vault is looking suspiciously empty. [Upload something 📄](/upload)"
+        "I can talk, but psychic abilities aren't enabled yet. [Feed me a file 📎](/upload)",
+        "I'd love to answer that — I'm just drawing a total blank. Literally no documents yet. [Feed me a file 📎](/upload)",
+        "My brain is currently empty. Very peaceful. Very useless. 😭 [Feed me a file 📎](/upload)",
+        "No documents, no secrets. Feed me something juicy. [Feed me a file 📎](/upload)",
+        "Your knowledge vault is looking suspiciously empty. [Feed me a file 📎](/upload)",
       ];
-      const responseText = WITTY_RESPONSES[Math.floor(Math.random() * WITTY_RESPONSES.length)];
+      const responseText =
+        WITTY_RESPONSES[Math.floor(Math.random() * WITTY_RESPONSES.length)];
 
       // Save user message (fire-and-forget)
       if (conversationId && lastUserMessage) {
-        saveMessage({
-          id: lastUserMessage.id,
-          conversation_id: conversationId,
-          role: "user",
-          content: queryText,
-        }, userId).catch((err) => console.error("[ChatRoute] Failed to save user message:", err));
+        saveMessage(
+          {
+            id: lastUserMessage.id,
+            conversation_id: conversationId,
+            role: "user",
+            content: queryText,
+          },
+          userId,
+        ).catch((err) =>
+          console.error("[ChatRoute] Failed to save user message:", err),
+        );
       }
 
       // Save assistant response (fire-and-forget)
       if (conversationId) {
-        saveMessage({
-          id: crypto.randomUUID(),
-          conversation_id: conversationId,
-          role: "assistant",
-          content: responseText,
-          sources: null,
-        }, userId).catch((err) => console.error("[ChatRoute] Failed to save assistant message:", err));
+        saveMessage(
+          {
+            id: crypto.randomUUID(),
+            conversation_id: conversationId,
+            role: "assistant",
+            content: responseText,
+            sources: null,
+          },
+          userId,
+        ).catch((err) =>
+          console.error("[ChatRoute] Failed to save assistant message:", err),
+        );
       }
 
       // Stream it back word-by-word with a 60ms delay
@@ -161,12 +180,17 @@ export async function POST(req: Request): Promise<Response> {
     // Fire-and-forget — persistence failure must not break the chat response.
     // DatabaseError from saveMessage is caught and logged here, not propagated.
     if (conversationId && lastUserMessage) {
-      saveMessage({
-        id: lastUserMessage.id,
-        conversation_id: conversationId,
-        role: "user",
-        content: queryText,
-      }, userId).catch((err) => console.error("[ChatRoute] Failed to save user message:", err));
+      saveMessage(
+        {
+          id: lastUserMessage.id,
+          conversation_id: conversationId,
+          role: "user",
+          content: queryText,
+        },
+        userId,
+      ).catch((err) =>
+        console.error("[ChatRoute] Failed to save user message:", err),
+      );
     }
 
     // ── RAG STEP 5: Relevance gate + Prompt Injection ───────────────────────
@@ -178,13 +202,18 @@ export async function POST(req: Request): Promise<Response> {
 
       // Save assistant response (fire-and-forget)
       if (conversationId) {
-        saveMessage({
-          id: crypto.randomUUID(),
-          conversation_id: conversationId,
-          role: "assistant",
-          content: responseText,
-          sources: null,
-        }, userId).catch((err) => console.error("[ChatRoute] Failed to save assistant message:", err));
+        saveMessage(
+          {
+            id: crypto.randomUUID(),
+            conversation_id: conversationId,
+            role: "assistant",
+            content: responseText,
+            sources: null,
+          },
+          userId,
+        ).catch((err) =>
+          console.error("[ChatRoute] Failed to save assistant message:", err),
+        );
       }
 
       // Stream it back word-by-word with a 60ms delay
@@ -210,7 +239,9 @@ export async function POST(req: Request): Promise<Response> {
       return createUIMessageStreamResponse({ stream });
     }
 
-    const sourcesToUse = relevantChunks.filter((c) => c.similarity >= RELEVANCE_THRESHOLD);
+    const sourcesToUse = relevantChunks.filter(
+      (c) => c.similarity >= RELEVANCE_THRESHOLD,
+    );
 
     const systemPrompt = `You are a strict personal knowledge assistant. Your main task is to answer the user's question using ONLY the retrieved context below.
 
@@ -240,13 +271,18 @@ CRITICAL RULES FOR GROUNDING AND ACCURACY:
       onFinish: async ({ text }) => {
         // ── Save assistant message when streaming completes ──────────────────
         if (conversationId) {
-          await saveMessage({
-            id: crypto.randomUUID(),
-            conversation_id: conversationId,
-            role: "assistant",
-            content: text,
-            sources: sourcesToUse.length > 0 ? sourcesToUse : null,
-          }, userId).catch((err) => console.error("[ChatRoute] Failed to save assistant message:", err));
+          await saveMessage(
+            {
+              id: crypto.randomUUID(),
+              conversation_id: conversationId,
+              role: "assistant",
+              content: text,
+              sources: sourcesToUse.length > 0 ? sourcesToUse : null,
+            },
+            userId,
+          ).catch((err) =>
+            console.error("[ChatRoute] Failed to save assistant message:", err),
+          );
         }
       },
     });
@@ -271,4 +307,3 @@ CRITICAL RULES FOR GROUNDING AND ACCURACY:
     return handleApiError(err, "[POST /api/chat]");
   }
 }
-
