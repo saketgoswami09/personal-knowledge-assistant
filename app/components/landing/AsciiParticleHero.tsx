@@ -254,5 +254,4 @@ export function AsciiParticleHero({ art = JUPITER_ART }: AsciiParticleHeroProps)
       className="absolute inset-0 block w-full h-full pointer-events-auto"
     />
   );
-  );
 }
