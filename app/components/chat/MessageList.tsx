@@ -15,7 +15,7 @@ import remarkGfm from "remark-gfm";
 import { SourcesPanel } from "./SourceCard";
 import type { AppUIMessage } from "@/app/api/chat/route";
 import type { SearchResult } from "@/lib/supabase";
-
+import { JupiterSpinner } from "./JupiterSpinner";
 interface Props {
   messages: AppUIMessage[];
   status: "submitted" | "streaming" | "ready" | "error";
@@ -115,7 +115,7 @@ export function MessageList({ messages, status, error }: Props) {
                     .flatMap(
                       (p) =>
                         (p as { type: "data-sources"; data: SearchResult[] })
-                          .data
+                          .data,
                     )
                 : [];
 
@@ -241,16 +241,15 @@ export function MessageList({ messages, status, error }: Props) {
 
         {/* Typing indicator */}
         {status === "submitted" && (
-          <div className="flex gap-4 flex-row">
+          <div className="flex gap-4 flex-row items-center fade-in duration-200">
             <div className="flex-shrink-0 mt-1">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-sm shadow-violet-200">
                 <Sparkles className="w-4 h-4" />
               </div>
             </div>
-            <div className="px-5 py-4 bg-white border border-gray-200/60 rounded-2xl rounded-tl-sm shadow-sm flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
-              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" />
+            <div className="flex items-center gap-2.5">
+              <JupiterSpinner />
+              <span className="text-xs text-gray-400">Thinking…</span>
             </div>
           </div>
         )}

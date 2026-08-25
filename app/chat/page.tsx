@@ -82,6 +82,7 @@ export default function ChatPage() {
 
   const transport = useMemo(
     () =>
+      // eslint-disable-next-line react-hooks/refs
       new DefaultChatTransport({
         api: "/api/chat",
         fetch: async (url, init) => {
