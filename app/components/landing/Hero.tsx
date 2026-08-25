@@ -40,10 +40,10 @@ const Hero = () => {
       <section className="relative flex min-h-screen flex-col items-center overflow-hidden rounded-[28px] bg-cover bg-center text-center">
         <Navbar />
         {/* Deep dark cosmic background */}
-        <div className="absolute inset-0 z-0 bg-[#090615]" />
+        <div className="absolute inset-0 z-0 " />
 
         {/* Gradient overlay for blending and readability */}
-        <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#090615]/30 via-[#090615]/20 to-[#090615]/50" />
+        <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#090615]/30 via-[#090615]/20 to-[#090615]/90" />
 
         <div
           ref={heroContentRef}

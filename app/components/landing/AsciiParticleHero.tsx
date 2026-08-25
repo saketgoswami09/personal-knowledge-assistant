@@ -3,17 +3,63 @@
 import React, { useEffect, useRef } from "react";
 
 export const JUPITER_ART = `
-                    ..-------..
-                 .-':::::::::::'-.
-               .':::::::::::::::::'.
-              /:::::::::::::::::::::\\
-             |:::::::::::::::::::::::|
-             |:::::::::::::::::::::::|
-             |:::::::::::::::::::::::|
-              \\:::::::::::::::::::::/
-               '.:::::::::::::::::.'
-                 '-.:::::::::::-'
-                    ''-------''
+                            .                               .                       .      .                       
+             .                                       .     .   .                    :... .--..:.    
+            .  .                                                     .     .   .........:.:.:....   
+                  .          .                                   .  .      ........:..::::...:::.   
+                   .    .              .           .                       ..::--.:--:---::-::-::.  
+                     .             .                                    :.:==..--:-----=:.:==:-:..  
+             .      .       .       .                               ..:--::-----=---=---=..--:-:    
+                    .               .             .              ...::::--:-::::-:--:.::.:..:.-.    
+                       .              .         .   .         ......:......:.:..................    
+   .                     .          .                        .....:::.:--::--::::::--:::::.::::.    
+                                                     .     ..::::--=-----:::-:::::-=---=-::-::.     
+                         .                .              .:-==-=+=+=-..-:.     ::.:-==+==.===..  .  
+      .                                 .             ..-:::-:---::=:   ..    ...:------:---:.      
+                                           ..:...:..::::--:::-::.               ..:---:::::.   .    
+                            .   .      ............................      .      ...:.......         
+           .    .                     ...::::-:::::::::--:::-:::-....   .  .   .::--::-:::.         
+                         .          .:.::::..::::::.::-::.:--..:::::.          ..:::::::..      .   
+         .                       .::-=.::--.::-:--=++=---:--+=-=+:.--..      .:-=++==-:-.           
+                             . ..--:--:::-:--====--=-:::=---=-:--::-=..:.    .:+----=-.             
+                              :.:::.:--:::::::------:---=---=-..-::--:.::.  -:-=-:::.          .    
+    .                 .    ...:..:...::...:.....:...::::....:::..:...:.::...:...:.....              
+                    .      ..:=.::....-.....:...........:.............:-:...:......                 
+                          ...:....:.::::.:--:::::-:--:::::-::::::::::..:-..::--:...       .       . 
+                ..        :.:-:-:-:-:=====+=-=+=+*+++===+=+++=-===--=::==:.-+--+:.                  
+            .            -:.:=:.:--=-=+===:-=+++**+=====+=--=---=--==-:-:.:=:=-..           .       
+                   .   ..:-:::-.::-----:::---=--=-:------::--::::-:-:::::.:-:.          .    .      
+            .          ..-=-:-.--=..:...:---------....:--.............:.:.-: .            .    .    
+      .   .             .:........:....................:.....................                       
+   .                     ....:-----::::.::--.:--.:----::--:---::-::--.::...:.           .     .     
+   .                   ..----==+-=:.-===--::---::--=:---==-=-=-=-:::-:.--:--.          .            
+                       .:+=:=+--:-++=+=+=++--=-===--==--=-:==--=====+:.-=:::.       .               
+                      .:--+--:-:::-::-=::-=--:-:-=-=:--===-----:::.-:.:=-:..                        
+           .         :=.::.-:--:::.:.:::::-.--=-:..-=---=--==.....::::......            .   .       
+                   .......................................................                  .       
+            .   . ..:-:::-:..-:::-:::::::::::-::--::::::::::-:::.:.--..::      .                    
+                 .:::::--::.::::::::::::--::::::::::::::::::::::.::::..... .  .    .                
+                :-=--==+..::-=+--=-=.:--=====+=-:----======---.:-::==...                            
+    .          ::::=:=+:.  .:-:.::--==::::::::::::::-::::::::::-::.-:...      .                     
+         . ..::-::-.:::     .:-:::::::-::::::-::--::::::-.::::..:....         .                     
+      .     .........:.     ...:....:...............................                         .      
+        .  ...:..::.:.        .::::..:.....:--:-:....:..-::.....:                                   
+           ::--:-:::..         ...:.::.:::.:.::.::.::::::.:::...                                    
+        ..-=-:++===:.             ..:-:.:=:-=-:-=-----:::-...        .     .                        
+        :-=-:=--==-....            .:=:.::.........:-:...                                           
+       ..:::::-::::.        . ...::::::::::::.       .            .                                 
+      ..::::...:::.....  :-:.:.::...:........                       .       .                       
+    .......:...:..::..........:..::..:..... .                   .    .                         .    
+    ..::-::.:--:::-::-..:--:------::.::..                                                     .     
+    .:--::--====-==::-=-===-===----.:.                                          .                   
+    :-===-==-====+++===+=+:--=-::-.                         .                       .               
+.  ::::-:.:-::::::-:--=:::-.:--.                           .                       .     .      .   
+    ....::.:::...::..-..:-.:....          .                         .               .               
+   .......................:.                        .                                               
+   :.:::::::::::.-::.::..    .                                       .   .                          
+    :--:.:::.:-::-:..                                                                               
+    .:--::.:::.                                              .                    .  ..  .    .     
+                  .                        ..                                                .      
 `;
 
 interface AsciiParticleHeroProps {
@@ -53,12 +99,28 @@ export function AsciiParticleHero({ art = JUPITER_ART }: AsciiParticleHeroProps)
 
     const initParticles = (width: number, height: number) => {
       particles = [];
-      const lines = art.split("\n").filter((l) => l.trim().length > 0);
+      const rawLines = art.split("\n");
+
+      // Trim empty rows from start and end to avoid off-center shifts
+      let startRow = 0;
+      while (startRow < rawLines.length && rawLines[startRow].trim() === "") {
+        startRow++;
+      }
+      let endRow = rawLines.length - 1;
+      while (endRow >= startRow && rawLines[endRow].trim() === "") {
+        endRow--;
+      }
+
+      const lines = rawLines.slice(startRow, endRow + 1);
       if (lines.length === 0) return;
 
       const numRows = lines.length;
       const numCols = Math.max(...lines.map((l) => l.length));
 
+      // Normalize lines to ensure exact geometry centering
+      const normalizedLines = lines.map((l) => l.padEnd(numCols, " "));
+
+      // Dynamic spacing scaled nicely
       const spacingX = Math.min(width / (numCols * 1.5), 16);
       const spacingY = Math.min(height / (numRows * 1.5), 24);
 
@@ -68,7 +130,7 @@ export function AsciiParticleHero({ art = JUPITER_ART }: AsciiParticleHeroProps)
       const startY = (height - gridHeight) / 2;
 
       for (let r = 0; r < numRows; r++) {
-        const line = lines[r];
+        const line = normalizedLines[r];
         for (let c = 0; c < line.length; c++) {
           const char = line[c];
           if (char === " ") continue;
@@ -100,15 +162,23 @@ export function AsciiParticleHero({ art = JUPITER_ART }: AsciiParticleHeroProps)
       }
     };
 
-    const handleResize = () => {
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
-      initParticles(rect.width, rect.height);
-    };
+    // Correctly measure and track container layout changes using ResizeObserver
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const width = entry.contentRect.width;
+        const height = entry.contentRect.height;
+        console.log(`[DEBUG] Canvas sized to: ${width}x${height}`);
 
-    window.addEventListener("resize", handleResize);
-    handleResize();
+        canvas.width = width;
+        canvas.height = height;
+        initParticles(width, height);
+      }
+    });
+
+    const parent = canvas.parentElement;
+    if (parent) {
+      resizeObserver.observe(parent);
+    }
 
     const handleMouseMove = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
@@ -169,7 +239,9 @@ export function AsciiParticleHero({ art = JUPITER_ART }: AsciiParticleHeroProps)
     tick();
 
     return () => {
-      window.removeEventListener("resize", handleResize);
+      if (parent) {
+        resizeObserver.unobserve(parent);
+      }
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("mouseleave", handleMouseLeave);
       cancelAnimationFrame(animationFrameId);
@@ -179,8 +251,8 @@ export function AsciiParticleHero({ art = JUPITER_ART }: AsciiParticleHeroProps)
   return (
     <canvas
       ref={canvasRef}
-      className="w-full h-full block"
-      style={{ pointerEvents: "auto" }}
+      className="absolute inset-0 block w-full h-full pointer-events-auto"
     />
+  );
   );
 }

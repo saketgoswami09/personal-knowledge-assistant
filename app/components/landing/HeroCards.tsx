@@ -122,11 +122,11 @@ const HeroCards = () => {
   }, []);
 
   return (
-    <div ref={rootRef} className="hero-3d relative">
-      <div className="absolute inset-0 -z-10 opacity-60">
+    <div ref={rootRef} className="hero-3d relative w-full h-[520px]">
+      <div className="absolute inset-0 -z-10">
         <AsciiParticleHero art={JUPITER_ART} />
       </div>
-      <div className="hero-3d-wrap">
+      <div className="hero-3d-wrap pointer-events-none">
         {groups.map((group) => (
           <div
             key={group.name}
@@ -135,7 +135,7 @@ const HeroCards = () => {
             {group.cards.map((image, index) => (
               <div
                 key={`${group.name}-${index}`}
-                className={`hero-img3d ${positions[index]}`}
+                className={`hero-img3d ${positions[index]} pointer-events-auto`}
               >
                 <div className="hero-image-wrapper">
                   <Image
