@@ -12,11 +12,11 @@ const Navbar = () => {
       </div>
 
       {/* Links (Hidden on Mobile) */}
-      <div className="hidden md:flex items-center gap-8">
+      {/* <div className="hidden md:flex items-center gap-8">
         <Link href="#features" className="text-sm font-medium text-white/70 hover:text-white transition-colors">
           Features
         </Link>
-      </div>
+      </div> */}
 
       {/* CTA */}
       <div className="flex items-center gap-4">
@@ -27,8 +27,8 @@ const Navbar = () => {
             </button>
           </SignInButton>
           <SignUpButton mode="modal">
-            <button className="rounded-full bg-white px-5 py-2.5 text-sm font-medium tracking-tight font-sans text-black hover:bg-gray-200 transition-colors">
-              Create a free account &rarr;
+            <button className="rounded-full bg-white px-5 py-2.5 text-sm font-medium tracking-tight font-sans text-black hover:bg-gray-200 transition-colors cursor-pointer">
+              Get started for free
             </button>
           </SignUpButton>
         </Show>
@@ -37,7 +37,7 @@ const Navbar = () => {
             href="/chat"
             className="rounded-full bg-white px-5 py-2.5 text-sm font-medium tracking-tight font-sans text-black hover:bg-gray-200 transition-colors"
           >
-            Go to App &rarr;
+            Go to App
           </Link>
           <div className="flex items-center justify-center">
             <UserButton />

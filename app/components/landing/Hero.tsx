@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { Show, SignUpButton } from "@clerk/nextjs";
 import Navbar from "./Navbar";
 import Link from "next/link";
 import VideoBackground from "../VideoBackground";
@@ -79,12 +80,21 @@ const Hero = () => {
               </p>
 
               <div className="hero-buttons mt-10 flex flex-col sm:flex-row justify-center gap-4">
-                <Link
-                  href="/sign-up"
-                  className="rounded-full bg-white px-7 py-3.5 text-[15px] font-medium tracking-tight font-sans text-black transition-all hover:bg-gray-200 hover:scale-105"
-                >
-                  Get started free
-                </Link>
+                <Show when="signed-out">
+                  <SignUpButton mode="modal">
+                    <button className="rounded-full bg-white px-7 py-3.5 text-[15px] font-medium tracking-tight font-sans text-black transition-all hover:bg-gray-200 hover:scale-105 cursor-pointer">
+                      Create a free account &rarr;
+                    </button>
+                  </SignUpButton>
+                </Show>
+                <Show when="signed-in">
+                  <Link
+                    href="/chat"
+                    className="rounded-full bg-white px-7 py-3.5 text-[15px] font-medium tracking-tight font-sans text-black transition-all hover:bg-gray-200 hover:scale-105"
+                  >
+                    Go to App &rarr;
+                  </Link>
+                </Show>
                 <Link
                   href="#features"
                   className="rounded-full border border-white/50 bg-white/10 px-7 py-3.5 text-[15px] font-medium tracking-tight font-sans text-white backdrop-blur-md transition-all hover:bg-white/20"
