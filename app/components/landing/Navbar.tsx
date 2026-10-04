@@ -1,86 +1,51 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
-import gsap from "gsap";
 import { SignInButton, SignUpButton, UserButton, Show } from "@clerk/nextjs";
+import Link from "next/link";
 
 const Navbar = () => {
-  const navRef = useRef<HTMLElement | null>(null);
-
-  useLayoutEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        ".nav-animate",
-        {
-          opacity: 0,
-          y: -12,
-          scale: 0.95,
-        },
-        {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          duration: 0.8,
-          ease: "power3.out",
-          stagger: 0.08,
-        },
-      );
-    }, navRef);
-
-    return () => ctx.revert();
-  }, []);
-
   return (
-    <nav
-      ref={navRef}
-      className="relative z-50 mx-auto flex w-full max-w-[950px] items-center justify-between px-4 py-5 font-geist-mono text-[16px] text-white"
-    >
+    <nav className="relative z-50 mx-auto flex w-full items-center justify-between px-6 md:px-10 py-5">
       {/* Logo */}
-      <div className="nav-animate flex items-center gap-2 font-normal">
-        <span>Conscious</span>
+      <div className="flex items-center gap-2">
+        <span className="text-[17px] font-semibold tracking-tight text-white">Conscious</span>
       </div>
 
-      {/* Links */}
-      <div className="flex items-center gap-7 uppercase tracking-[0.12em]">
-        <a className="nav-animate" href="#">
-          Home
-        </a>
-
-        <a className="nav-animate" href="#">
-          FEATURES
-        </a>
-
-        <a className="nav-animate" href="#">
-          ABOUT
-        </a>
-
-        <a className="nav-animate flex items-center gap-2" href="#">
-          CONTACT
-        </a>
+      {/* Links (Hidden on Mobile) */}
+      <div className="hidden md:flex items-center gap-8">
+        <Link href="#features" className="text-sm font-medium text-white/70 hover:text-white transition-colors">
+          Features
+        </Link>
+        <Link href="#" className="text-sm font-medium text-white/70 hover:text-white transition-colors">
+          How it works
+        </Link>
+        <Link href="#" className="text-sm font-medium text-white/70 hover:text-white transition-colors">
+          Pricing
+        </Link>
       </div>
 
       {/* CTA */}
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-4">
         <Show when="signed-out">
           <SignInButton mode="modal">
-            <button className="nav-animate cursor-pointer uppercase tracking-[0.12em] hover:text-[#d6fd70] transition-colors">
-              SIGN IN
+            <button className="hidden sm:block text-sm font-medium text-white/70 hover:text-white transition-colors">
+              Sign in
             </button>
           </SignInButton>
           <SignUpButton mode="modal">
-            <button className="nav-animate cursor-pointer rounded-full bg-[#d6fd70] px-5 py-3 text-xs font-normal uppercase tracking-[0.12em] text-black hover:bg-white hover:text-black transition-colors">
-              GET STARTED
+            <button className="rounded-full bg-white px-5 py-2.5 text-sm font-medium tracking-tight font-sans text-black hover:bg-gray-200 transition-colors">
+              Create a free account &rarr;
             </button>
           </SignUpButton>
         </Show>
         <Show when="signed-in">
-          <a
+          <Link
             href="/chat"
-            className="nav-animate cursor-pointer rounded-full bg-[#d6fd70] px-5 py-3 text-xs font-normal uppercase tracking-[0.12em] text-black hover:bg-white hover:text-black transition-colors"
+            className="rounded-full bg-white px-5 py-2.5 text-sm font-medium tracking-tight font-sans text-black hover:bg-gray-200 transition-colors"
           >
-            GO TO CHAT
-          </a>
-          <div className="nav-animate flex items-center justify-center">
+            Go to App &rarr;
+          </Link>
+          <div className="flex items-center justify-center">
             <UserButton />
           </div>
         </Show>

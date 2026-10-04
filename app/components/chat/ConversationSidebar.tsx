@@ -307,7 +307,7 @@ export function ConversationSidebar({
           <div className="w-80 rounded-2xl bg-white p-5 shadow-xl border border-gray-100">
             <h3 className="text-sm font-semibold text-gray-900">Delete Conversation?</h3>
             <p className="mt-2 text-xs text-gray-500 leading-relaxed">
-              Delete this conversation? This can't be undone.
+              Delete this conversation? This cannot be undone.
             </p>
             <div className="mt-5 flex justify-end gap-2.5">
               <button

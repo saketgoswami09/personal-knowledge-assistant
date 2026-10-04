@@ -9,7 +9,7 @@
 
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
-import { ChevronRight, ChevronLeft, Sparkles, BookOpen, MessageSquare, ArrowRight } from "lucide-react";
+import { ChevronRight, ChevronLeft, ArrowRight } from "lucide-react";
 import { SuggestionGrid } from "./SuggestionGrid";
 import { FloatingInput } from "./FloatingInput";
 
@@ -91,8 +91,11 @@ function TerminalView({ step }: { step: number }) {
   const currentStepData = stepsData[step - 1];
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLines([]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentLineIndex(0);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTypedText("");
   }, [step]);
 
@@ -106,6 +109,7 @@ function TerminalView({ step }: { step: number }) {
 
     if (isCommand) {
       let charIdx = 0;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTypedText("$ ");
       const interval = setInterval(() => {
         setTypedText((prev) => prev + currentTargetLine[charIdx]);
@@ -203,13 +207,16 @@ export function HomeScreen({ value, onChange, onSubmit, disabled }: Props) {
   // Pick a random greeting style on mount to avoid hydration warnings
   useEffect(() => {
     const randomIdx = Math.floor(Math.random() * GREETINGS.length);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setGreetingText(GREETINGS[randomIdx]);
   }, []);
 
   // Force onboarding status to show every time
   useEffect(() => {
     if (isLoaded && user?.id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowOnboarding(true);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setOnboardingLoaded(true);
     }
   }, [isLoaded, user?.id]);

@@ -2,100 +2,104 @@
 
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
-
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Navbar from "./Navbar";
 import Link from "next/link";
-import HeroCards from "./HeroCards";
-import { AsciiParticleHero, JUPITER_ART } from "./AsciiParticleHero";
+import VideoBackground from "../VideoBackground";
+import BottomFade from "../BottomFade";
+import Grain from "../Grain";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const Hero = () => {
-  const heroContentRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
-      const elements = gsap.utils.toArray<HTMLElement>(".hero-scroll-text");
+      // Intro animation
+      gsap.fromTo(
+        ".hero-title-line",
+        { y: 50, opacity: 0 },
+        { y: 0, opacity: 1, duration: 1, stagger: 0.2, ease: "power3.out" }
+      );
+      
+      gsap.fromTo(
+        ".hero-subtitle",
+        { y: 20, opacity: 0 },
+        { y: 0, opacity: 1, duration: 1, delay: 0.4, ease: "power3.out" }
+      );
 
       gsap.fromTo(
-        elements,
-        {
-          opacity: 0,
-          y: 16,
-          scale: 0.9,
-        },
-        {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          duration: 0.7,
-          ease: "power2.out",
-          stagger: 0.12,
-        },
+        ".hero-buttons",
+        { y: 20, opacity: 0 },
+        { y: 0, opacity: 1, duration: 1, delay: 0.6, ease: "power3.out" }
       );
-    }, heroContentRef);
+
+      // Parallax effect for the text block as you scroll down
+      gsap.to(".hero-content", {
+        y: 150,
+        opacity: 0,
+        ease: "none",
+        scrollTrigger: {
+          trigger: containerRef.current,
+          start: "top top",
+          end: "bottom top",
+          scrub: true,
+        },
+      });
+    }, containerRef);
 
     return () => ctx.revert();
   }, []);
 
   return (
-    <div className="bg-[#F7F6F4] p-2.5">
-      <section className="relative flex min-h-screen flex-col items-center overflow-hidden rounded-[28px] bg-cover bg-center text-center">
+    <>
+      <VideoBackground />
+      <Grain opacity={0.25} />
+      <BottomFade />
+      <div ref={containerRef} className="min-h-[85vh] flex flex-col relative z-10">
         <Navbar />
-        {/* Deep dark cosmic background */}
-        <div className="absolute inset-0 z-0 bg-[#090615]" />
 
-        {/* Gradient overlay for blending and readability */}
-        <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#090615]/30 via-[#090615]/20 to-[#090615]/50" />
+        <main className="flex-grow flex flex-col items-center px-4 relative">
+          <div className="hero-content max-w-4xl mx-auto w-full relative pt-32 md:pt-40 pb-24">
+            
+            {/* Corner Brackets */}
+            
 
-        {/* Interactive ASCII Particle Background directly behind heading text */}
-        <div className="absolute inset-0 z-0 opacity-70">
-          <AsciiParticleHero art={JUPITER_ART} />
-        </div>
-
-        <div
-          ref={heroContentRef}
-          className="relative z-10 flex flex-col items-center py-16 text-center"
-        >
-          <div className="mt-20">
-            <h1 className="hero-scroll-text text-center text-[60px] font-medium leading-[1.12] tracking-tighter text-[#F8F7F4]">
-              Your workplace knowledge.
-              <br />
-              <span className="bg-gradient-to-r from-[#D8C7FF] via-[#F3B6D2] to-[#FFB38A] bg-clip-text text-transparent">
-                One simple conversation.
-              </span>
-            </h1>
-
-            <p className="hero-scroll-text mx-auto mt-6 max-w-[460px] text-[16px] leading-6 text-[#F8F7F4]/80">
-              Find answers across company policies, HR documents, reports, and
-              internal files — just by asking.
-            </p>
-
-            <div className="hero-scroll-text mt-7 flex justify-center gap-4">
-              {/* Secondary Button */}
-              <Link
-                href="/chat"
-                className="rounded-full border border-white/20 bg-white/10 px-6 py-3 font-mono text-xs font-medium uppercase tracking-[0.18em] text-white backdrop-blur-md transition-all duration-300 hover:scale-105 hover:bg-white/20"
-              >
-                View Demo
-              </Link>
-
-              {/* Primary Button */}
-              <Link
-                href="/chat"
-                className="group flex items-center gap-3 rounded-full bg-[#E7D7FF] py-1.5 pl-5 pr-1.5 text-xs font-medium uppercase tracking-[0.18em] text-[#211A2B] transition-all duration-300 hover:scale-105 hover:bg-[#F0E4FF]"
-              >
-                <span>Get Started</span>
-
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#211A2B] text-white transition-transform duration-300 group-hover:rotate-45">
-                  ↗
+            <div className="text-center sm:px-12 z-10 relative">
+              <h1 className="text-5xl sm:text-6xl md:text-7xl font-normal tracking-tight leading-[1.08] text-white text-balance flex flex-col items-center justify-center">
+                <span className="hero-title-line font-sans font-light tracking-[-0.03em] block">Chat with the</span>
+                <span className="hero-title-line font-serif font-normal tracking-[-0.01em] text-[1.08em] italic block mt-2">
+                  Things You Know
                 </span>
-              </Link>
+              </h1>
+
+              <p className="hero-subtitle mx-auto mt-6 max-w-2xl text-base md:text-lg leading-relaxed text-white/70 font-normal text-balance">
+                Upload your notes, docs and PDFs, then ask questions in plain language. Conscious finds the answer and shows you where it came from.
+              </p>
+
+              <div className="hero-buttons mt-10 flex flex-col sm:flex-row justify-center gap-4">
+                <Link
+                  href="/sign-up"
+                  className="rounded-full bg-white px-7 py-3.5 text-[15px] font-medium tracking-tight font-sans text-black transition-all hover:bg-gray-200 hover:scale-105"
+                >
+                  Get started free
+                </Link>
+                <Link
+                  href="#how-it-works"
+                  className="rounded-full border border-white/50 bg-white/10 px-7 py-3.5 text-[15px] font-medium tracking-tight font-sans text-white backdrop-blur-md transition-all hover:bg-white/20"
+                >
+                  See how it works
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
-
-        <HeroCards />
-      </section>
-    </div>
+          
+          {/* Bottom Strip */}
+          
+        </main>
+      </div>
+    </>
   );
 };
 

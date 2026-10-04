@@ -106,7 +106,7 @@ export function MessageList({ messages, status, error }: Props) {
                   .filter((p) => p.type === "text")
                   .map((p) => p.text)
                   .join("")
-              : ((m as any).content as string) || "";
+              : (m as { content?: string }).content || "";
 
             const sources: SearchResult[] =
               m.role === "assistant" && m.parts
