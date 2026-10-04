@@ -25,6 +25,18 @@ const instrumentSerif = Instrument_Serif({
 export const metadata: Metadata = {
   title: "Conscious — Your Personal Knowledge Assistant",
   description: "Chat with your documents and turn your knowledge into answers.",
+  openGraph: {
+    title: "Conscious — Your Personal Knowledge Assistant",
+    description: "Chat with your documents and turn your knowledge into answers.",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Conscious Hero",
+      },
+    ],
+  },
 };
 
 export default function RootLayout({
