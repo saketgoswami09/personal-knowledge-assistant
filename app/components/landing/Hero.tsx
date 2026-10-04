@@ -86,10 +86,10 @@ const Hero = () => {
                   Get started free
                 </Link>
                 <Link
-                  href="#how-it-works"
+                  href="#features"
                   className="rounded-full border border-white/50 bg-white/10 px-7 py-3.5 text-[15px] font-medium tracking-tight font-sans text-white backdrop-blur-md transition-all hover:bg-white/20"
                 >
-                  See how it works
+                  View features
                 </Link>
               </div>
             </div>

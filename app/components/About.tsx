@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { Brain, Zap } from "lucide-react";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -64,15 +65,15 @@ const About = () => {
             Your personal AI brain,
             <br />
             designed to make research{" "}
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-sky-400 align-middle text-2xl">
-              🧠
+            <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-sky-400 align-middle text-2xl text-black">
+              <Brain size={24} />
             </span>{" "}
             faster
             <br />
             <span className="text-white/50">
               and{" "}
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-lime-300 align-middle text-2xl">
-                ⚡
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-lime-300 align-middle text-2xl text-black">
+                <Zap size={24} fill="currentColor" />
               </span>{" "}
               infinitely smarter
             </span>
@@ -94,12 +95,12 @@ const About = () => {
 
             <div className="absolute inset-x-5 bottom-5 rounded-[16px] bg-white/20 backdrop-blur-md p-5 text-white">
 
-              <div className="text-[72px] font-normal leading-none tracking-tight">
-                10x
+              <div className="text-[48px] font-normal leading-none tracking-tight">
+                Instant
               </div>
 
               <p className="mt-4 max-w-sm text-[16px] leading-6">
-                Faster information retrieval across your entire library of notes and documents.
+                Answers from your own notes. Faster information retrieval across your entire library.
               </p>
 
             </div>
@@ -137,15 +138,15 @@ const About = () => {
             <div className="about-reveal min-h-[190px] rounded-[24px] bg-[#d6fd70] p-5 text-black">
 
               <p className="text-[16px]">
-                Pages Digested
+                File Size Limit
               </p>
 
-              <div className="mt-5 text-[56px] leading-none">
-                Unlimited
+              <div className="mt-5 text-[48px] leading-none">
+                Up to 50MB
               </div>
 
               <p className="mt-8 max-w-sm text-[15px] leading-6">
-                Upload PDFs, Word docs, and text files without worrying about limits.
+                Upload and digest large PDFs, Word docs, and text files.
               </p>
 
             </div>
@@ -157,8 +158,8 @@ const About = () => {
                 Formats Supported
               </span>
 
-              <span className="text-[48px] leading-none">
-                All
+              <span className="text-[28px] leading-none text-right">
+                PDF, TXT, MD
               </span>
 
             </div>

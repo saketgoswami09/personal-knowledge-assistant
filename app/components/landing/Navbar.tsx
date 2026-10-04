@@ -16,12 +16,6 @@ const Navbar = () => {
         <Link href="#features" className="text-sm font-medium text-white/70 hover:text-white transition-colors">
           Features
         </Link>
-        <Link href="#" className="text-sm font-medium text-white/70 hover:text-white transition-colors">
-          How it works
-        </Link>
-        <Link href="#" className="text-sm font-medium text-white/70 hover:text-white transition-colors">
-          Pricing
-        </Link>
       </div>
 
       {/* CTA */}
